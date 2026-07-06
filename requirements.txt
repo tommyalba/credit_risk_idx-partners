@@ -1,0 +1,17 @@
+pandas
+scikit-learn
+scikit-optimize
+imblearn
+joblib
+tqdm
+numpy
+scipy
+seaborn
+fastapi
+jupyterlab
+requests
+xgboost
+catboost
+shap
+statsmodels
+lightgbm==4.6.0
