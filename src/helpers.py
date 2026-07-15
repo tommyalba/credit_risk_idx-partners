@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import copy
 import logging
-from typing import Any, Dict, Tuple, Callable, Optional, Union
+from typing import Any, Dict, Tuple, Callable, Optional, Union, List
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 from xgboost import XGBClassifier
@@ -42,7 +42,7 @@ def calculate_probability_metrics(y_true: pd.Series, y_proba: np.ndarray) -> Dic
     gini = 2.0 * roc_auc - 1.0
     
     # Extract KS statistics using internal helper
-    from ks_statistic_evaluation import compute_ks_statistic
+    from src.ks_statistic_evaluation import compute_ks_statistic
     ks_result = compute_ks_statistic(y_true, y_proba)
     ks_stat = float(ks_result['ks_statistic_roc'])
     
@@ -158,20 +158,20 @@ def threshold_classification_metrics(y_true, y_proba, threshold):
     predicted_bad_rate = y_pred.mean()
 
     return {
-        'balanced_accuracy': balanced_accuracy_score(y_true, y_pred),
-        'mcc': matthews_corrcoef(y_true, y_pred),
-        'precision_bad': precision_score(y_true, y_pred, pos_label=1, zero_division=0),
-        'recall_bad': recall_score(y_true, y_pred, pos_label=1, zero_division=0),
-        'f1_bad': f1_score(y_true, y_pred, pos_label=1, zero_division=0),
-        'specificity': specificity,
-        'npv': npv,
-        'fpr': fpr,
-        'fnr': fnr,
-        'predicted_bad_rate': predicted_bad_rate,
-        'tn': tn,
-        'fp': fp,
-        'fn': fn,
-        'tp': tp,
+        'Balanced_Accuracy': balanced_accuracy_score(y_true, y_pred),
+        'MCC': matthews_corrcoef(y_true, y_pred),
+        'Precision_Bad': precision_score(y_true, y_pred, pos_label=1, zero_division=0),
+        'Recall_Bad': recall_score(y_true, y_pred, pos_label=1, zero_division=0),
+        'F1_Bad': f1_score(y_true, y_pred, pos_label=1, zero_division=0),
+        'Specificity': specificity,
+        'NPV': npv,
+        'FPR': fpr,
+        'FNR': fnr,
+        'Predicted_Bad_Rate': predicted_bad_rate,
+        'TN': tn,
+        'FP': fp,
+        'FN': fn,
+        'TP': tp,
     }
 
 # ============================================================
@@ -180,7 +180,7 @@ def threshold_classification_metrics(y_true, y_proba, threshold):
 def find_best_cost_threshold(
     y_true, y_proba,
     c_fn=None, c_fp=None):
-    from expected_cost_threshold import expected_cost_curve_scalar
+    from src.expected_cost_threshold import expected_cost_curve_scalar
     """
     Threshold that minimizes: 
     
@@ -193,7 +193,7 @@ def find_best_cost_threshold(
     # Economic parameters:    
     if c_fn is None:
         c_fn = 8_250_000.0  # EAD * LGD = 15jt * 0.55
-
+    
     if c_fp is None:
         c_fp = 2_700_000.0  # EAD * spread * durasi = 15jt * 0.09 * 2
 
@@ -334,7 +334,6 @@ def print_report_and_cm(y_true, y_pred, title):
         index=['Actual GOOD (0)', 'Actual BAD (1)'],
         columns=['Pred GOOD (0)', 'Pred BAD (1)']
     )
-    display(cm_df)
     return cm_df
 
 # ============================================================
@@ -738,7 +737,7 @@ def run_probability_pipeline(
 
     # --- TAHAP 1: Ekstraksi Probabilitas Mentah (Raw) ---
     for model_name, model_obj in fitted_models.items():
-        logger.info("Extracting raw probabilities for model: %s", model_name)
+        logger.info(f"Extracting raw probabilities for model: %s", model_name)
         
         # Buat key untuk versi raw model tersebut
         raw_key = f"{model_name}"
@@ -959,3 +958,6 @@ def evaluate_thresholds_pipeline(
         evaluation_rows.append(row_test)
         
     return pd.DataFrame(evaluation_rows)
+
+
+# ======================================

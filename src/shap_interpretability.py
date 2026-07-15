@@ -130,7 +130,7 @@ def validate_efficiency_axiom(explanation, model, X, atol=1e-3):
 # 2. DIAGNOSTIK GLOBAL -- SUMMARY PLOT
 # ===========================================================================
 
-def plot_global_importance(explanation, max_display=15, plot_type="dot"):
+def plot_global_importance(explanation, X_valid, max_display=15, plot_type="dot"):
     """
     Summary plot: peringkat fitur berdasarkan rata-rata |SHAP value|,
     dengan sebaran titik berwarna (merah=nilai fitur tinggi, biru=rendah)
@@ -249,14 +249,21 @@ def check_monotonicity(explanation, feature_name, expected_direction="increasing
     # Bersihkan feature_values: antisipasi jika data tersimpan sebagai object/string
     feature_ser = pd.Series(raw_feature_values)
 
-    if feature_ser.dtype == 'object':
+    # Gunakan pengecekan yang lebih luas: jika bukan numerik
+    if not pd.api.types.is_numeric_dtype(feature_ser):
         try:
-            # Coba konversi langsung ke float jika aslinya angka tapi bertipe object
+            # Coba konversi langsung ke float jika aslinya angka tapi bertipe string/object
             feature_values_clean = feature_ser.astype(float).to_numpy()
         except ValueError:
-            # Jika gagal (misal berisi teks kategori seperti '0-10k'), 
-            # kita ubah menjadi urutan kode ordinal angka agar bisa diranking oleh spearmanr
-            feature_values_clean = pd.factorize(feature_ser)[0]
+            # Jika gagal (misal berisi teks kategori seperti '20p16_to_21p91'),
+            # Ubah menjadi urutan ordinal angka. 
+            # sort=True SANGAT PENTING untuk binning agar urutannya tidak berantakan.
+            if isinstance(feature_ser.dtype, pd.CategoricalDtype):
+                # Jika sudah berupa category ordinal dari Pandas, manfaatkan cat.codes
+                feature_values_clean = feature_ser.cat.codes.to_numpy()
+            else:
+                # Fallback untuk string biasa
+                feature_values_clean = pd.factorize(feature_ser, sort=True)[0]
     else:
         feature_values_clean = np.asarray(raw_feature_values, dtype=float).flatten()
 

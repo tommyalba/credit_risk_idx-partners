@@ -47,7 +47,7 @@ def serialize_data(data, path: str) -> None:
     None: This function does not return a value, it only saves the data to a file.
     """
     joblib.dump(data, path)
-    print(f"Data berhasil diserialisasi ke {path}")
+    print(f"Data successfully serialized to {path}")
     
 
 # Function to deserialize data
@@ -62,7 +62,7 @@ def deserialize_data(path: str):
     object: Deserialized data (can be a DataFrame, Series, or other object).
     """
     data = joblib.load(path)
-    print(f"Data berhasil dideserialisasi dari {path}")
+    print(f"Data successfully deserialized from {path}")
     return data
 
     
@@ -149,7 +149,7 @@ def plot_numeric_distributions(
             ax=axes[i, 0]
         )
         axes[i, 0].set_title(f'Density Distribution of `{col}` by Target ({hue_col})', fontsize=13)
-
+        
         # Boxplot
         sns.boxplot(
             data=df_temp,
@@ -267,29 +267,38 @@ def compute_vif(dataframe, target_col=None):
 
 # Input-Output Split
 # Function to split data into input features and output target
-def split_input_output(data, target_col):
+def split_input_output(data, target_col, columns_to_keep=None):
     """
     Splits the data into input features (X) and output target (y).
+    Optionally filters the data to use only specified columns.
 
     Parameters:
-    data -- Pandas DataFrame containing the data
-    target_col -- String name of the target column to be used as output
+    data            -- Pandas DataFrame containing the data
+    target_col      -- String name of the target column to be used as output
+    columns_to_keep -- List of strings containing names of columns to retain 
+                       (includes the target column)
 
     Returns:
     X -- DataFrame containing input features
     y -- Series containing output target
     """
-    # Drop the target column to get input features
-    X = data.drop(target_col, axis=1)
+    # Jika list kolom disediakan, filter dataframe terlebih dahulu
+    if columns_to_keep is not None:
+        # Gunakan intersection untuk mencegah KeyError jika ada kolom yang typo/tidak ditemukan
+        valid_cols = [col for col in columns_to_keep if col in data.columns]
+        data = data[valid_cols]
+        
+    # Drop the target column to get input features (hanya dari kolom yang sudah difilter)
+    X = data.drop(target_col, axis=1, errors='ignore')
     
     # Select the target column as output
     y = data[target_col]
     
     # Print the shape of input features DataFrame
-    print(X.shape)
+    print(f"X shape: {X.shape}")
     
     # Print the shape of output target Series
-    print(y.shape)
+    print(f"y shape: {y.shape}")
     
     # Return input features and output target
     return X, y
