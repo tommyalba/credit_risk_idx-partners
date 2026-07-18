@@ -130,7 +130,7 @@ def validate_efficiency_axiom(explanation, model, X, atol=1e-3):
 # 2. DIAGNOSTIK GLOBAL -- SUMMARY PLOT
 # ===========================================================================
 
-def plot_global_importance(explanation, X_valid, max_display=15, plot_type="dot"):
+def plot_global_importance(explanation, max_display=None, plot_type="dot"):
     """
     Summary plot: peringkat fitur berdasarkan rata-rata |SHAP value|,
     dengan sebaran titik berwarna (merah=nilai fitur tinggi, biru=rendah)

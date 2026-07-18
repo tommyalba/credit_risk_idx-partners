@@ -18,6 +18,8 @@ from sklearn.metrics import (
     average_precision_score, brier_score_loss, precision_recall_curve, accuracy_score
 )
 
+RANDOM_STATE = 42
+
 logger = logging.getLogger(__name__)
 
 # ==========================================
@@ -734,7 +736,7 @@ def run_probability_pipeline(
         raise KeyError(f"data_splits wajib memiliki key berikut: {required_splits}")
 
     proba_store: Dict[str, Dict[str, np.ndarray]] = {}
-
+    
     # --- TAHAP 1: Ekstraksi Probabilitas Mentah (Raw) ---
     for model_name, model_obj in fitted_models.items():
         logger.info(f"Extracting raw probabilities for model: %s", model_name)
@@ -815,7 +817,7 @@ def select_stage_a_winner(
     """
     if manual_winner is not None:
         if manual_winner not in fitted_models:
-            raise ValueError(f"Manual winner '{manual_winner}' tidak ditemukan di dictionary model.")
+            raise ValueError(f"Manual winner '{manual_winner}' not found in model dictionary.")
         winner_name = manual_winner
         
         # Extract validation metric rows for manual models
@@ -838,12 +840,19 @@ def select_stage_a_winner(
         )
         
         # Take the top line (winner)
-        valid_metrics = sorted_valid.iloc[0]
-        winner_name = valid_metrics['model_name']
+        winner_name = sorted_valid.iloc[0]['model_name']
         
     winner_model = fitted_models[winner_name]
+
+    # Extract ALL split rows (train, valid, test) for the winning model
+    winner_metrics = leaderboard_df[
+        leaderboard_df['model_name'] == winner_name
+    ].copy()
     
-    return winner_name, winner_model, valid_metrics
+    # Sort by split so that the order is always train -> valid -> test
+    winner_metrics = winner_metrics.sort_values(by='split').reset_index(drop=True)
+    
+    return winner_name, winner_model, winner_metrics
 
 
 def evaluate_calibration_candidates(
