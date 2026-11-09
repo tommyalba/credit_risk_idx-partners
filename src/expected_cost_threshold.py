@@ -109,7 +109,14 @@ def estimate_cost_components(
         c_fn, c_fp, out=np.full_like(c_fn, np.nan), where=(c_fp != 0)
     )
 
-    return {'C_FN': float(c_fn), 'C_FP': float(c_fp), 'ratio_CFN_CFP': float(ratio)}
+    def _as_scalar_or_array(a):
+        return float(a) if np.isscalar(a) or np.asarray(a).shape == () else np.asarray(a, dtype=float)
+
+    return {
+        'C_FN': _as_scalar_or_array(c_fn),
+        'C_FP': _as_scalar_or_array(c_fp),
+        'ratio_CFN_CFP': _as_scalar_or_array(ratio),
+    }
 
 
 # ===========================================================================

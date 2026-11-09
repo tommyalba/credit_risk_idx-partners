@@ -332,3 +332,31 @@ def split_train_test(X, y, test_size, stratify, seed):
     )
     # Return the split data
     return X_train, X_test, y_train, y_test
+
+def information_gain_report(data, features, target_col):
+    """Information gain IG(feature; target) per feature, sorted descending.
+
+    Equivalent to the inline entropy implementations previously copy-pasted
+    across notebooks 1, 2 and 4.
+    """
+    import math
+    from collections import Counter
+
+    def _entropy(labels):
+        counts = Counter(labels)
+        n = len(labels)
+        h = 0.0
+        for c in counts.values():
+            p = c / n
+            h -= p * math.log2(p)
+        return h
+
+    n = len(data)
+    overall = _entropy(data[target_col])
+    gains = {}
+    for feature in features:
+        weighted = 0.0
+        for _, group in data.groupby(feature, observed=True):
+            weighted += (len(group) / n) * _entropy(group[target_col])
+        gains[feature] = round(overall - weighted, 4)
+    return sorted(gains.items(), key=lambda kv: kv[1], reverse=True)

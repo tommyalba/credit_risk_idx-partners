@@ -1,0 +1,5 @@
+[core]
+    no_scm = True
+    remote = local
+['remote "local"']
+    url = /home/gontommuhammad/dvc_remotes/credit_risk

@@ -130,6 +130,7 @@ import numpy as np
 import pandas as pd
 from optbinning import BinningProcess
 
+np.random.seed(42)
 
 # ============================================================================
 # 1. Feature routing
@@ -150,7 +151,7 @@ EXCLUDED_FEATURES: List[str] = ['tot_coll_amt', 'tot_cur_bal', 'total_rev_hi_lim
 
 # Features that need to be dropped due to wrong-sign coefficients and 
 # undetected multicollinearity after training and evaluation
-DROPPED_FEATURES: List[str] = ['revol_bal_to_income', 'total_acc', 'verification_status']
+DROPPED_FEATURES: List[str] = ['revol_bal', 'total_acc', 'verification_status']
 
 _NUMERIC_INTERVAL_RE = re.compile(
     r"^[\(\[]\s*-?(?:\d+\.?\d*|\.\d+|inf)\s*,\s*-?(?:\d+\.?\d*|\.\d+|inf)\s*[\)\]]$"
@@ -164,9 +165,8 @@ ALGORITHMIC_FIT_PARAMS: Dict[str, dict] = {
     'emp_length_ordinal': dict(max_n_bins=10, min_bin_size=0.05, monotonic_trend='ascending'),
     'inq_last_6mths': dict(max_n_bins=4, min_bin_size=0.02, monotonic_trend='ascending'),
     'loan_to_income': dict(max_n_bins=11, min_bin_size=0.05, monotonic_trend='ascending'),
-    'revol_bal_to_income': dict(max_n_bins=8, min_bin_size=0.05, monotonic_trend='ascending'),
+    'revol_bal': dict(max_n_bins=5, min_bin_size=0.05, monotonic_trend='ascending'),
     'revol_util': dict(max_n_bins=11, min_bin_size=0.05, monotonic_trend='ascending'),
-    'total_acc': dict(max_n_bins=6, min_bin_size=0.05, monotonic_trend='descending'),
     'open_acc_ratio': dict(max_n_bins=7, min_bin_size=0.05, monotonic_trend='ascending'),
     # --- NOMINAL CATEGORY FEATURES ---
     # Nominal categories have no inherent numeric order, so 'auto' is
@@ -179,7 +179,6 @@ ALGORITHMIC_FIT_PARAMS: Dict[str, dict] = {
     # --- DISCRETE/ORDINAL/BINARY CATEGORY (Tenor 36/60 & Has/No) ---
     # Locked to 2 bins, e.g. there are only the numbers 36 and 60 with an Ascending trend.
     'term': dict(max_n_bins=2, min_bin_size=0.05, monotonic_trend='ascending'),
-    'verification_status': dict(max_n_bins=2, min_bin_size=0.05, monotonic_trend='ascending'),
     'has_derogatory': dict(max_n_bins=2, min_bin_size=0.05, monotonic_trend='ascending'),
 }
 
@@ -221,20 +220,19 @@ def add_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     ).astype('category')
 
     out['loan_to_income'] = out['loan_amnt'] / out['annual_inc']
-    out['revol_bal_to_income'] = out['revol_bal'] / out['annual_inc']
     out['open_acc_ratio'] = out['open_acc'] / out['total_acc'].replace(0, np.nan)  # avoid div/0
 
     out['term'] = out['term'].replace(
         {' 36 months': '36_months', ' 60 months': '60_months'}
     ).astype('category')
-
+    
     out['home_ownership'] = out['home_ownership'].astype('category')
     out['purpose'] = out['purpose'].astype('category')
     
     # List of dropped features
     base_cols = [
         'collections_12_mths_ex_med', 'delinq_2yrs', 'earliest_cr_line', 
-        'emp_length', 'issue_d', 'loan_amnt', 'revol_bal', 'open_acc', 'pub_rec'
+        'emp_length', 'issue_d', 'loan_amnt', 'open_acc', 'pub_rec',
     ]
     out = out.drop(columns=base_cols + DROPPED_FEATURES)
     
@@ -269,6 +267,11 @@ def fit_binning(X_train: pd.DataFrame, target_col: str = 'target') -> BinningArt
     print("RUNNING SPECIAL/MISSING CONSISTENCY AUDIT")
     print("="*50)
     
+    try:
+        from IPython.display import display as _display
+    except ImportError:
+        _display = print
+
     for feature in ALGORITHMIC_FEATURES:
         audit = check_special_missing_consistency(
             binning_artifacts=binning_artifacts,
@@ -277,7 +280,7 @@ def fit_binning(X_train: pd.DataFrame, target_col: str = 'target') -> BinningArt
         )
         
         # Cetak log untuk visibilitas
-        display(audit.set_index('Feature'))
+        _display(audit.set_index('Feature'))
         
         # Evaluasi asersi (jika tabel tidak kosong)
         if not audit.empty:
