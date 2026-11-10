@@ -19,10 +19,15 @@ src/         workflow modules: utils, performance_window, binning_woe,
 data/        raw/ → interim/ → processed/   (DVC-tracked)
 models/      serialized winners               (DVC-tracked)
 artifacts/   binning_artifacts.pkl, manifest.json   (DVC-tracked)
-reports/     figures/
+reports/     figures/, reject_inference.md + results
 logs/        pipeline logs
 configs/     (reserved for shared config)
 tests/       pytest suite
+experiments/ one-off studies: survival hazard, adverse impact,
+             bureau-feature retest, reject inference
+autoresearch/ agent experiment loop: program.md protocol,
+             experiment.py (temporal-validation eval only),
+             configs/, results/trials.jsonl
 ```
 
 ## Environment
@@ -60,6 +65,48 @@ Notebooks 3–4 consume them and log every run to MLflow
 - **MLflow** tracks experiments/metrics/params; `mlflow.db` + `mlartifacts/`
   are gitignored local state.
 - **Git** tracks code, notebooks, tests, requirements, reports.
+
+## Agent / contributor orientation
+
+If you are an agent starting a fresh session in this repo:
+
+1. **Memory**: run `~/.optmem/memo wake` first (required by global rules) —
+   it holds cross-session decisions and experiment outcomes.
+2. **Environment**: `conda activate credit-risk_VENV` before running
+   notebooks, `src/` modules, or `dashboard/app.py` (pickle artifacts are
+   env-sensitive — never load them in another env).
+3. **Read order**: this README → `notebooks/2_Preparation_Preprocessing.ipynb`
+   (canonical prep) → `src/` modules as needed → `artifacts/manifest.json`
+   (exact artifact versions/hashes).
+4. **Notebook roles**: nb1 is exploratory-only (its in-notebook drops are NOT
+   the modeling pipeline); nb2 is the single canonical prep that feeds
+   nb3/nb4; nb3 = LR scorecard, nb4 = tree models + ensemble.
+5. **Hard rules**: never touch the OOT test split during model selection;
+   post-origination columns (`pymnt_time_month`, `recoveries`, `out_prncp`,
+   `total_pymnt`, …) are leakage and must never become features; keep
+   `pytest` green (`15 passed`).
+6. **Current state**: CatBoost won Stage A on the temporal validation split
+   (valid AUC ≈ 0.647, OOT ≈ 0.644); LR scorecard valid ≈ 0.639 / OOT ≈ 0.639.
+   Streamlit scoring app in `dashboard/app.py` uses the nb3 scorecard +
+   `binning_artifacts.pkl`. `experiments/` holds one-off studies
+   (survival hazard, adverse impact, bureau-feature retest — all documented
+   as rejected or v2 candidates).
+7. **Deferred work**: cloud DVC remote (needs credentials),
+   dashboard v2 (batch scoring, PSI panel, segment views), hazard-model
+   recalibration, rolling-origin evaluation.
+   **Done via OpenResearch agent** (branch `reject-inference`): reject
+   inference — strict RI impossible (funded-only data, no reject labels);
+   sensitivity/bounds analysis in `reports/reject_inference.md`. Key result:
+   applicant-pool PD plausibly 1.4–1.9× the funded estimate and τ=0.288 is
+   likely too loose (oracle ≈ 0.12–0.18) — the bias is invisible to model
+   scores and lives entirely in realized outcomes. Merge the branch when
+   ready.
+   **Also done** (branch `class-imbalance-sampling`): oversampling AND
+   undersampling study — `reports/class_imbalance_sampling.md`. Verdict:
+   SMOTE hurts monotonically (−0.006 @30% minority, −0.020 @50%), RUS is
+   AUC-neutral but destroys calibration; nothing beats cat_raw 0.6468.
+   `autoresearch/experiment.py` now supports a `sampling` config key
+   (fit split only; SMOTENC required — 4 of 12 features are categorical).
 
 ## Key methodology decisions
 
