@@ -1,0 +1,5 @@
+{
+  "model": "cat",
+  "features": "all",
+  "sampling": {"method":"rus","minority_frac":0.20}
+}

@@ -1,0 +1,5 @@
+{
+  "model": "cat",
+  "features": "all",
+  "sampling": {"method":"smote","minority_frac":0.30}
+}
