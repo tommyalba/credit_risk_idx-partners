@@ -4,7 +4,7 @@ One entry point for the production lifecycle:
 
   1. APPLICATION  — borrower applies; only application-time fields exist.
      Scenario A scores PD(default) for the approve/reject decision.
-  2. FUNDING+      — loan is funded; pricing/structure fields are now known.
+  2. FUNDING+     — loan is funded; pricing/structure fields are now known.
      Scenario B scores PD(default) for ongoing book monitoring.
 
 `score_lifecycle` accepts ONE dataframe containing every raw column and

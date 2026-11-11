@@ -1,6 +1,6 @@
 """Scenario B (post-origination) feature specification and derivation.
 
-Feature eligibility follows notebooks/1_EDA.ipynb section 3.1
+Feature eligibility follows notebooks/1-EDA.ipynb section 3.1
 "Scenario B — Post-Origination Model": funding/pricing features are known
 at prediction time; repayment/collection outcomes remain excluded.
 

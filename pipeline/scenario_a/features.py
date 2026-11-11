@@ -1,6 +1,6 @@
 """Scenario A (application-time) feature specification.
 
-Feature eligibility follows notebooks/1_EDA.ipynb section 3.1
+Feature eligibility follows notebooks/1-EDA.ipynb section 3.1
 "Scenario A — Application-Time Model": only information available before
 loan approval/funding. Derivation reuses the canonical
 src.binning_woe.add_derived_features used by nb2/nb4.
