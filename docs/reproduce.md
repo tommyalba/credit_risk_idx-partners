@@ -95,6 +95,10 @@ Threshold uncertainty: `python experiments/tau_ci.py` bootstraps the
 cost-optimal τ on validation (`reports/threshold_ci.csv`,
 `reports/threshold_ci.md`).
 
+Fairness diagnostics: `python experiments/adverse_impact.py` and
+`python experiments/calibration_parity.py` (AIRs and per-segment
+calibration gaps/slopes on valid + OOT).
+
 Per-vintage recalibration check: `python experiments/recalibration_drift.py
 --scenario a|b` (quarterly refits; `reports/recalibration_drift_*.csv`).
 

@@ -80,6 +80,8 @@ new scenarios should extend the spec, not copy core.
   heavy-zero count features; see `reports/feature_representation.md`).
 - `experiments/`: one-off studies, not part of the production path:
   `reject_inference.py`, `adverse_impact.py`,
+  `calibration_parity.py` (per-segment calibration gap + slope; see
+  `reports/calibration_parity.md`),
   `mths_features_and_lr_interactions.py`, `rolling_oot.py`
   (expanding-window quarterly OOT evaluation; see
   `reports/rolling_oot_evaluation.md`), `reject_augmentation.py`

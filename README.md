@@ -91,6 +91,12 @@ bundles ship uncalibrated models.
 - **Adverse impact** (`experiments/adverse_impact.py`): adverse-impact
   ratio < 0.80 on 60-month terms, `small_business` purpose, and the top
   loan-to-income tercile. Income itself is clean.
+- **Calibration parity** (`experiments/calibration_parity.py`,
+  `reports/calibration_parity.md`): PDs mean roughly the same thing
+  across segments (gaps of a few pp, mostly the global over-prediction
+  direction), with two exceptions to monitor — `small_business` risk is
+  under-predicted by ~5pp while also showing adverse impact, and
+  60-month terms are over-predicted by ~6pp on OOT.
 - **Class imbalance** (`reports/class_imbalance_sampling.md`): SMOTE
   hurts monotonically; random undersampling is AUC-neutral but breaks
   calibration. Resampling is not a lever for gradient-boosted trees here.
