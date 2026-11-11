@@ -15,6 +15,7 @@ from pipeline.scenario_b.features import (  # noqa: E402
     add_scenario_b_features,
     apply_calibrator,
 )
+from pipeline.scenario_b.features import add_scenario_b_features  # noqa: E402
 from pipeline.scenario_b.score import (  # noqa: E402
     prepare_scoring_frame,
     score,
@@ -78,21 +79,23 @@ def test_derived_features_math():
 
 
 def test_leakage_columns_rejected():
+    from pipeline.scenario_b.score import REQUIRED_RAW
     df = pd.DataFrame([_raw_row()])
     df['recoveries'] = 0.0
     with pytest.raises(ValueError, match='leakage'):
-        validate_payload(df)
+        validate_payload(df, FORBIDDEN_FEATURES, REQUIRED_RAW)
 
     df2 = pd.DataFrame([_raw_row()])
     df2['out_prncp'] = 5000.0
     with pytest.raises(ValueError):
-        validate_payload(df2)
+        validate_payload(df2, FORBIDDEN_FEATURES, REQUIRED_RAW)
 
 
 def test_missing_derivation_input_rejected():
+    from pipeline.scenario_b.score import REQUIRED_RAW
     df = pd.DataFrame([_raw_row()]).drop(columns=['installment'])
     with pytest.raises(ValueError, match='missing required'):
-        validate_payload(df)
+        validate_payload(df, FORBIDDEN_FEATURES, REQUIRED_RAW)
 
 
 def _toy_bundle(n_features=3):
@@ -125,7 +128,7 @@ def test_score_returns_decision_frame():
     # prepare_scoring_frame derives features; toy cols pass through only if
     # add_scenario_b_features keeps them — it drops unknown cols? No: it
     # keeps all input cols except drop list, so f1/f2/f3 survive.
-    X = prepare_scoring_frame(df, bundle)
+    X = prepare_scoring_frame(df, bundle, add_scenario_b_features)
     assert list(X.columns) == ['f1', 'f2', 'f3']
     assert str(X['f2'].dtype) == 'category'
 

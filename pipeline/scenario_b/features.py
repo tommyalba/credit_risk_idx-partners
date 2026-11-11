@@ -114,6 +114,8 @@ FORBIDDEN_FEATURES: List[str] = [
     'last_pymnt_d',
     'last_credit_pull_d',
     'pymnt_plan',
+    # the label itself must never appear in a scoring payload
+    'loan_status', 'target',
 ]
 
 

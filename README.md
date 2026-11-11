@@ -28,11 +28,10 @@ experiments/ one-off studies: survival hazard, adverse impact,
 autoresearch/ agent experiment loop: program.md protocol,
              experiment.py (temporal-validation eval only),
              configs/, results/trials.jsonl
-pipeline/    Scenario-B (post-origination) .py pipeline:
-             scenario_b/prepare.py (nb2-equivalent),
-             scenario_b/train.py (nb4-equivalent tree training +
-             calibration + cost threshold + bundle),
-             scenario_b/score.py (production scoring + PSI drift)
+pipeline/    Scenario A+B .py pipelines (nb2->nb4 equivalents):
+             core.py shared engine; scenario_a/ and scenario_b/ each
+             with prepare.py / train.py / score.py; infer.py runs the
+             unified application->funding inference workflow
 ```
 
 ## Environment
