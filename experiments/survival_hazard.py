@@ -15,13 +15,15 @@ categoricals) + smooth period terms (t, t^2, log t) for the baseline hazard.
 
 Run from repo root:  python experiments/survival_hazard.py
 """
-import sys, os, time, warnings
+import sys, os, time, argparse, warnings
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 warnings.filterwarnings('ignore')
 import numpy as np
 import pandas as pd
 import joblib
+from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import roc_auc_score, log_loss, brier_score_loss
 
 from src.binning_woe import add_derived_features
@@ -29,7 +31,7 @@ from src.performance_window import DEFAULT_BAD_STATUSES, DEFAULT_RESOLVED_GOOD_S
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 M = 33
-SNAPSHOT = pd.Timestamp('2015-09-01')
+SNAPSHOT = pd.Timestamp('2016-01-01')  # canonical pipeline snapshot
 
 def months_between(a, b):
     return ((b.dt.year - a.dt.year) * 12 + (b.dt.month - a.dt.month)).clip(lower=0)
@@ -86,10 +88,18 @@ def person_period(X_feat, T, event):
     ev[ends[event.to_numpy() == 1]] = 1
     return feats, ev
 
-def fit_hazard(Xtr_pp, y_pp):
-    lr = LogisticRegression(C=0.5, max_iter=300, solver='lbfgs')
-    lr.fit(Xtr_pp, y_pp)
-    return lr
+def fit_hazard(Xtr_pp, y_pp, learner='lr'):
+    if learner == 'lr':
+        model = LogisticRegression(C=0.5, max_iter=300, solver='lbfgs')
+    elif learner == 'hgb':
+        model = HistGradientBoostingClassifier(
+            max_iter=400, learning_rate=0.06, max_leaf_nodes=31,
+            l2_regularization=1.0, early_stopping=True,
+            validation_fraction=0.1, random_state=42)
+    else:
+        raise ValueError(f'unknown learner {learner!r}')
+    model.fit(Xtr_pp, y_pp)
+    return model
 
 def pd_within_M(model, X_loan, T_max=M):
     """PD(event within M months) per loan via cumulative hazard product."""
@@ -103,7 +113,24 @@ def pd_within_M(model, X_loan, T_max=M):
     H = np.vstack(rows).T                      # n_loans x M hazards
     return 1.0 - np.prod(1.0 - H, axis=1)
 
+def metrics_row(y, p, name):
+    p = np.clip(np.asarray(p, dtype=float), 1e-6, 1 - 1e-6)
+    return {
+        'split': name,
+        'n': len(y),
+        'bad_rate': float(np.mean(y)),
+        'mean_pd': float(np.mean(p)),
+        'auc': float(roc_auc_score(y, p)),
+        'logloss': float(log_loss(y, p)),
+        'brier': float(brier_score_loss(y, p)),
+    }
+
+
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--learner', choices=['lr', 'hgb'], default='lr')
+    args = ap.parse_args()
+
     t0 = time.time()
     print('=== loading splits ===')
     data = {}
@@ -139,32 +166,70 @@ def main():
     print('train person-period:', pp_X.shape, 'events:', pp_y.sum(),
           f'({time.time()-t0:.0f}s)')
 
-    print('=== fitting discrete-time hazard LR ===')
-    model = fit_hazard(pp_X, pp_y)
-    print(f'fit done ({time.time()-t0:.0f}s)')
+    print('=== fitting discrete-time hazard model ===')
+    model = fit_hazard(pp_X, pp_y, learner=args.learner)
+    print(f'learner={args.learner} fit done ({time.time()-t0:.0f}s)')
 
     def ks(y, p):
         o = np.argsort(-p); ys = np.asarray(y)[o]
         P, N = ys.sum(), len(ys) - ys.sum()
         return float(np.max(np.abs(np.cumsum(ys)/P - np.cumsum(1-ys)/N)))
 
+    # --- PD(33) per split, raw + isotonic-calibrated on a train tail ---
+    # Calibration fit on the LAST 15% of train (temporally adjacent to
+    # valid), mirroring the pipeline's temporal discipline; valid/test
+    # stay untouched until scoring.
+    pd33 = {s: pd_within_M(model, feats[s]) for s in ('train', 'valid', 'test')}
+
+    n_tr = len(feats['train'])
+    cal_n = int(round(n_tr * 0.15))
+    # train frame is sorted by issue_d upstream; tail = most recent
+    cal_mask = np.zeros(n_tr, dtype=bool)
+    cal_mask[-cal_n:] = True
+    y_tr_all = data['train'][1]
+    y_cal = np.asarray(y_tr_all)[cal_mask]
+    p_cal = pd33['train'][cal_mask]
+    iso = IsotonicRegression(out_of_bounds='clip')
+    iso.fit(p_cal, y_cal)
+    print(f'calibrator: isotonic on last {cal_n} train loans '
+          f'(bad rate {y_cal.mean():.3f})')
+
+    rows = []
     print('\n=== PD(33mo) vs binary labels ===')
     for s in ['valid', 'test']:
         Xs, ys, Ts, evs = data[s]
-        pd_m = pd_within_M(model, feats[s])
-        auc = roc_auc_score(ys, pd_m)
-        ll = log_loss(ys, np.clip(pd_m, 1e-6, 1-1e-6))
-        br = brier_score_loss(ys, pd_m)
-        print(f'{s}: PD33 AUC={auc:.5f} KS={ks(ys, pd_m):.4f} '
-              f'logloss={ll:.4f} brier={br:.4f} | mean PD={pd_m.mean():.3f} vs bad={ys.mean():.3f}')
+        for tag, p in [('raw', pd33[s]), ('iso', iso.predict(pd33[s]))]:
+            auc = roc_auc_score(ys, p)
+            ll = log_loss(ys, np.clip(p, 1e-6, 1 - 1e-6))
+            br = brier_score_loss(ys, p)
+            rows.append(metrics_row(ys, p, f'{s}_{tag}'))
+            print(f'{s} {tag}: PD33 AUC={auc:.5f} KS={ks(ys, p):.4f} '
+                  f'logloss={ll:.4f} brier={br:.4f} | '
+                  f'mean PD={np.mean(p):.3f} vs bad={ys.mean():.3f}')
 
-    # calibration-ish: decile table on test
+    # binary CatBoost baseline for the same splits (Scenario A)
+    base = {'valid': (0.646804, 0.402443, 0.121717),
+            'test': (0.644239, 0.389742, 0.116929)}  # auc, logloss, brier
+    print('\n=== vs binary CatBoost baseline (Scenario A) ===')
+    for s in ('valid', 'test'):
+        r = next(r for r in rows if r['split'] == f'{s}_iso')
+        b = base['test' if s == 'test' else 'valid']
+        print(f"{s}: hazard-iso AUC={r['auc']:.4f} vs cat {b[0]:.4f} "
+              f"(delta {r['auc']-b[0]:+.4f})")
+
+    out = pd.DataFrame(rows)
+    out.to_csv(f'{ROOT}/reports/hazard_model_{args.learner}.csv',
+               index=False)
+
+    # calibration deciles on test (isotonic version)
     Xs, ys, Ts, evs = data['test']
-    pd_m = pd_within_M(model, feats['test'])
-    dec = pd.qcut(pd_m, 10, labels=False, duplicates='drop')
-    cal = pd.DataFrame({'dec': dec, 'y': ys, 'pd': pd_m}).groupby('dec').agg(
+    p_iso = iso.predict(pd33['test'])
+    dec = pd.qcut(p_iso, 10, labels=False, duplicates='drop')
+    cal = pd.DataFrame({'dec': dec, 'y': ys, 'pd': p_iso}).groupby('dec').agg(
         emp=('y', 'mean'), pred=('pd', 'mean'), n=('y', 'size'))
-    print('\ntest calibration deciles:'); print(cal.round(3).to_string())
+    print('\ntest calibration deciles (isotonic):')
+    print(cal.round(3).to_string())
+    cal.to_csv(f'{ROOT}/reports/hazard_model_{args.learner}_deciles.csv')
 
 if __name__ == '__main__':
     main()

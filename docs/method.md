@@ -79,7 +79,9 @@ new scenarios should extend the spec, not copy core.
   (expanding-window quarterly OOT evaluation; see
   `reports/rolling_oot_evaluation.md`), `reject_augmentation.py`
   (trains Scenario A with a rejects file; see
-  `src/reject_inference.py`).
+  `src/reject_inference.py`); `survival_hazard.py` also takes
+  `--learner lr|hgb` (discrete-time hazard; see
+  `reports/hazard_model.md`).
 - `dashboard/app.py`: Streamlit Scenario-A scorecard preview (no
   production scoring path yet).
 

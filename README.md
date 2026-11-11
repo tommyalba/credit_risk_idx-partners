@@ -189,10 +189,12 @@ For a fresh agent session:
   gradually (~0.004–0.006 AUC per quarter over 2011–2013) rather than
   breaking suddenly. A semi-annual refit cadence is likely sufficient;
   `experiments/rolling_oot.py` re-validates any retrained bundle cheaply.
-- **Hazard/survival formulation.** A discrete-time hazard model was
-  prototyped (`experiments/survival_hazard.py`): it underperformed the
-  binary models on AUC but offers a principled PD(t) + censoring view.
-  Worth revisiting with calibration before any production consideration.
+- **Hazard/survival formulation.** Revisited with calibration and a
+  gradient-boosted learner (`reports/hazard_model.md`): the discrete-time
+  hazard model still trails the binary CatBoost by ~0.008 OOT AUC, but
+  calibration fixes its PD level and it uniquely provides PD(t)
+  curves. Retained as the right tool if term-structure or
+  early-warning use cases appear.
 - **Dashboard v2.** Batch scoring, PSI panel, and segment views on top of
   `pipeline/infer.py` outputs; the antislop skill family is installed for
   UI work.
