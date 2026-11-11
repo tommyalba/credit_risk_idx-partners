@@ -35,8 +35,10 @@ Each scenario has the same four stages under `pipeline/scenario_{a,b}/`:
   `models/scenario_{a}/scenario_{a}_bundle.joblib` plus
   `reports/scenario_{a}_{metrics.json,leaderboard.csv,model_card.md}`.
 - `score.py`: batch scorer. Loads the bundle, aligns categories to the
-  stored levels, applies the threshold, and optionally emits a PSI drift
-  report against the validation decile reference stored in the bundle.
+  stored levels, applies the threshold. `--psi` emits the full drift
+  report (`core.drift_report`): per-feature characteristic PSI plus
+  score-distribution PSI and an overall Stable/Moderate/Significant
+  verdict; `--intervals` adds Venn-Abers PD intervals.
 
 `pipeline/core.py` is the shared engine: split construction, model
 family dispatch, calibration selection, threshold selection, report
@@ -61,6 +63,7 @@ new scenarios should extend the spec, not copy core.
 | `ensemble.py` | stacking/ensemble helpers (evaluated; single CatBoost won) |
 | `manifest.py` | `artifacts/manifest.json`: env versions, split config, artifact hashes |
 | `reject_inference.py` | reject-file ingestion, pseudo-label weights, augmented training set builder |
+| `conformal.py` | Venn-Abers PD intervals (`--intervals` on score/infer) |
 
 ## Entry points beyond prepare/train/score
 
@@ -72,17 +75,27 @@ new scenarios should extend the spec, not copy core.
 - `autoresearch/experiment.py`: evaluates one `configs/*.json` on the
   temporal validation split only. Protocol and keep/discard rule live in
   `autoresearch/program.md`; trials append to
-  `autoresearch/results/trials.jsonl`.
+  `autoresearch/results/trials.jsonl`. Configs may set `sampling`
+  (fit-split resampling) and `counts` (raw / two-part re-expression of
+  heavy-zero count features; see `reports/feature_representation.md`).
 - `experiments/`: one-off studies, not part of the production path:
-  `reject_inference.py`, `adverse_impact.py`, `survival_hazard.py`,
+  `reject_inference.py`, `adverse_impact.py`,
   `mths_features_and_lr_interactions.py`, `rolling_oot.py`
   (expanding-window quarterly OOT evaluation; see
   `reports/rolling_oot_evaluation.md`), `reject_augmentation.py`
   (trains Scenario A with a rejects file; see
-  `src/reject_inference.py`); `survival_hazard.py` also takes
-  `--learner lr|hgb` (discrete-time hazard; see
-  `reports/hazard_model.md`), `metric_ci.py`
-  (bootstrap CIs on the temporal splits; see `reports/metric_ci.csv`).
+  `src/reject_inference.py`), `survival_hazard.py`
+  (discrete-time hazard, `--learner lr|hgb`; emits PD(t) cohort curves,
+  EL term structure, and time-to-event summaries; see
+  `reports/hazard_model.md` and `reports/hazard_pd_curves.md`),
+  `metric_ci.py`
+  (bootstrap CIs on the temporal splits; see `reports/metric_ci.csv`),
+  `recalibration_drift.py` (per-quarter recalibration transfer test;
+  see `reports/recalibration_drift.md`), `calibration_slope.py`
+  (logit slope/intercept + ECE + OOT transfer test; see
+  `reports/calibration_slope.md`), `tau_ci.py`
+  (bootstrap CI on the cost-optimal threshold; see
+  `reports/threshold_ci.md`).
 - `dashboard/app.py`: Streamlit Scenario-A scorecard preview (no
   production scoring path yet).
 

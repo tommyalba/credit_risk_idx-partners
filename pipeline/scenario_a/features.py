@@ -55,8 +55,11 @@ def _clean_dates(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     for col in ('issue_d', 'earliest_cr_line'):
         if col in df.columns and not pd.api.types.is_datetime64_any_dtype(df[col]):
-            df[col] = pd.to_datetime(df[col], format='%b-%y',
-                                     errors='coerce')
+            parsed = pd.to_datetime(df[col], format='%b-%y',
+                                    errors='coerce')
+            # tolerate ISO-8601 payloads (e.g. CSV round-trips) too
+            df[col] = parsed.fillna(pd.to_datetime(df[col], format='ISO8601',
+                                            errors='coerce'))
     # nb2 cells 18-19 category cleaning
     if 'home_ownership' in df.columns:
         df['home_ownership'] = df['home_ownership'].replace(

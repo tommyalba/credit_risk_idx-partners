@@ -97,6 +97,29 @@ def git_sha() -> str:
 OVER_SAMPLERS = {"smote"}
 UNDER_SAMPLERS = {"rus", "nearmiss", "clustercentroids"}
 
+# Heavy-zero count features collapsed into `has_derogatory` (or kept raw)
+# by add_derived_features. `"counts"` config key re-expresses them:
+#   "raw"     -> the four raw counts as numeric features
+#   "twopart" -> <c>__nz zero-indicator + <c>__pos positive part (NaN=0)
+# In both modes has_derogatory and the surviving inq_last_6mths column
+# are replaced by the expanded representation.
+COUNT_COLS = ["delinq_2yrs", "pub_rec", "collections_12_mths_ex_med",
+              "inq_last_6mths"]
+COUNT_REPLACE = ["has_derogatory", "inq_last_6mths"]
+
+
+def expand_counts(df: pd.DataFrame, raw: pd.DataFrame, mode: str) -> pd.DataFrame:
+    out = df.drop(columns=[c for c in COUNT_REPLACE if c in df.columns])
+    r = raw[COUNT_COLS].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+    if mode == "raw":
+        return pd.concat([out, r], axis=1)
+    parts = []
+    for c in COUNT_COLS:
+        pos = r[c].where(r[c] > 0)
+        parts.append(pd.DataFrame({f"{c}__nz": (r[c] > 0).astype(np.int8),
+                                   f"{c}__pos": pos}))
+    return pd.concat([out] + parts, axis=1)
+
 
 def apply_sampling(X, y, spec):
     """Resample the FIT split only. spec: {"method": ..., "minority_frac": f}
@@ -186,8 +209,17 @@ def main() -> None:
         X_temp, y_temp, test_size=ES_CAL_SHARE_WITHIN_TEMP,
         stratify=y_temp, seed=RANDOM_STATE)
 
-    frames = {k: add_derived_features(v) for k, v in
-              {"fit": X_fit, "es": X_es, "valid": X_valid}.items()}
+    splits = {"fit": X_fit, "es": X_es, "valid": X_valid}
+    counts_mode = cfg.get("counts")
+    if counts_mode:
+        assert counts_mode in ("raw", "twopart"), \
+            f"unknown counts mode {counts_mode!r}"
+        raw_counts = {k: v[COUNT_COLS] for k, v in splits.items()}
+
+    frames = {k: add_derived_features(v) for k, v in splits.items()}
+    if counts_mode:
+        frames = {k: expand_counts(frames[k], raw_counts[k], counts_mode)
+                  for k in frames}
     cols = sorted(frames["fit"].columns)
     frames = {k: df[cols] for k, df in frames.items()}
 
@@ -233,6 +265,7 @@ def main() -> None:
         "n_features": len(frames["valid"].columns),
         "features": feats if feats == "all" else "subset",
         "sampling": sampling,
+        "counts": counts_mode,
         "auc": round(roc_auc_score(y_valid, proba), 6),
         "logloss": round(log_loss(y_valid, proba), 6),
         "brier": round(brier_score_loss(y_valid, proba), 6),

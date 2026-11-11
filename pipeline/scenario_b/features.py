@@ -124,8 +124,11 @@ def clean_payload(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     for col in ('issue_d', 'earliest_cr_line'):
         if col in df.columns and not pd.api.types.is_datetime64_any_dtype(df[col]):
-            df[col] = pd.to_datetime(df[col], format='%b-%y',
-                                     errors='coerce')
+            parsed = pd.to_datetime(df[col], format='%b-%y',
+                                    errors='coerce')
+            # tolerate ISO-8601 payloads (e.g. CSV round-trips) too
+            df[col] = parsed.fillna(pd.to_datetime(df[col], format='ISO8601',
+                                            errors='coerce'))
     for col in ('int_rate', 'revol_util'):
         if col in df.columns and not pd.api.types.is_numeric_dtype(df[col]):
             df[col] = pd.to_numeric(

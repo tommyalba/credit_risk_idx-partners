@@ -48,6 +48,7 @@ and the pipeline share identical artifacts.
 ```bash
 python -m pipeline.scenario_a.score applications.csv -o scores_a.csv --psi
 python -m pipeline.scenario_b.score funded.csv        -o scores_b.csv --psi
+# append --intervals to either for Venn-Abers PD intervals
 python -m pipeline.infer records.csv                  -o lifecycle.csv
 python -m pipeline.explain --scenario a
 python -m pipeline.explain --scenario b --shap --n 1000 --input records.csv
@@ -89,6 +90,17 @@ fields), feature derivation, and scoring round-trips.
 Headline metrics live in `reports/scenario_{a,b}_metrics.json`;
 per-family detail in `reports/scenario_{a,b}_leaderboard.csv`; human
 summaries in `reports/scenario_{a,b}_model_card.md`.
+
+Threshold uncertainty: `python experiments/tau_ci.py` bootstraps the
+cost-optimal τ on validation (`reports/threshold_ci.csv`,
+`reports/threshold_ci.md`).
+
+Per-vintage recalibration check: `python experiments/recalibration_drift.py
+--scenario a|b` (quarterly refits; `reports/recalibration_drift_*.csv`).
+
+Calibration diagnostics: `python experiments/calibration_slope.py`
+writes slope/intercept, ECE, and transfer-test metrics to
+`reports/calibration_slope.csv` (see `reports/calibration_slope.md`).
 
 Metric uncertainty: `python experiments/metric_ci.py` writes bootstrap
 95% CIs for AUC/log-loss/Brier/PR-AUC on both temporal splits to

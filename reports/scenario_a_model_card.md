@@ -51,7 +51,9 @@ fields (`funded_amnt`, `grade`, `int_rate`, `installment`,
 | xgb | 0.6442 | — |
 
 - Calibration: raw won on validation Brier (0.1217).
+- Calibration diagnostic (`reports/calibration_slope.md`): logit slope 0.897 valid / 0.881 OOT (b<1 = mildly overconfident), ECE 0.0130/0.0190; valid-fit logit recal transfers to OOT (+~0.001 log-loss).
 - Threshold: expected-cost τ = **0.2883**; see bundle for approved-book
+- Threshold robustness (`reports/threshold_ci.md`): τ bootstrap 95% CI [0.244, 0.292]; cost curve flat (±0.05 costs ~2%); regret at deployed τ <0.5% mean.
   bad rate.
 - Matches `autoresearch` baseline_cat to 6 decimals — the .py pipeline is
   a verified nb4 reproduction.

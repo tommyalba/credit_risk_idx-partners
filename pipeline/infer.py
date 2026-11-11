@@ -28,7 +28,10 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from pipeline.core import score_records  # noqa: E402
+from pipeline.core import (  # noqa: E402
+    add_conformal_intervals,
+    score_records,
+)
 from pipeline.scenario_a import score as score_a  # noqa: E402
 from pipeline.scenario_a.features import (  # noqa: E402
     FORBIDDEN_FEATURES as FORBIDDEN_A,
@@ -44,7 +47,8 @@ from pipeline.scenario_b.features import (  # noqa: E402
 
 def score_lifecycle(df: pd.DataFrame,
                     bundle_a=None, bundle_b=None,
-                    id_col='member_id') -> dict:
+                    id_col='member_id',
+                    intervals: bool = False) -> dict:
     """Score one batch through both scenarios.
 
     Returns {'scenario_a': DataFrame, 'scenario_b': DataFrame} aligned
@@ -77,6 +81,26 @@ def score_lifecycle(df: pd.DataFrame,
         'pd_score': 'pd_score_funded',
         'decision': 'decision_funded'})
 
+    if intervals:
+        # Venn-Abers intervals per scenario; renamed to avoid collision
+        # in the merged frame. Two isotonic fits per row per scenario.
+        res_a = add_conformal_intervals(
+            res_a, bundle_a, add_scenario_a_features,
+            Path('data/interim'), score_col='pd_score_application')
+        res_a = res_a.rename(columns={
+            'pd_lower': 'pd_lower_application',
+            'pd_upper': 'pd_upper_application',
+            'pd_mid': 'pd_mid_application',
+            'interval_width': 'interval_width_application'})
+        res_b = add_conformal_intervals(
+            res_b, bundle_b, add_scenario_b_features,
+            Path('data/interim/scenario_b'), score_col='pd_score_funded')
+        res_b = res_b.rename(columns={
+            'pd_lower': 'pd_lower_funded',
+            'pd_upper': 'pd_upper_funded',
+            'pd_mid': 'pd_mid_funded',
+            'interval_width': 'interval_width_funded'})
+
     merged = res_a.join(res_b.drop(columns=[id_col], errors='ignore'))
     return {'scenario_a': res_a, 'scenario_b': res_b,
             'combined': merged}
@@ -89,6 +113,8 @@ def main() -> None:
     ap.add_argument('-o', '--output', help='write combined scores CSV')
     ap.add_argument('--bundle-a', default=str(score_a.BUNDLE_PATH))
     ap.add_argument('--bundle-b', default=str(score_b.BUNDLE_PATH))
+    ap.add_argument('--intervals', action='store_true',
+                    help='add Venn-Abers PD intervals per scenario')
     args = ap.parse_args()
 
     path = Path(args.input)
@@ -98,7 +124,8 @@ def main() -> None:
     result = score_lifecycle(
         df,
         bundle_a=score_a.load_bundle(args.bundle_a),
-        bundle_b=score_b.load_bundle(args.bundle_b))
+        bundle_b=score_b.load_bundle(args.bundle_b),
+        intervals=args.intervals)
 
     combined = result['combined']
     print(combined.head(20).to_string(index=False))

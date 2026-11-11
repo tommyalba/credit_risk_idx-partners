@@ -111,6 +111,7 @@ python -m pipeline.scenario_b.prepare && python -m pipeline.scenario_b.train
 # score batches
 python -m pipeline.scenario_a.score applications.csv -o scores_a.csv --psi
 python -m pipeline.scenario_b.score funded.csv -o scores_b.csv --psi
+# add --intervals for Venn-Abers PD intervals (see reports/conformal_coverage.md)
 
 # unified lifecycle scoring (one CSV -> both PDs)
 python -m pipeline.infer records.csv -o lifecycle_scores.csv
@@ -142,7 +143,7 @@ reports/      model cards, metrics JSON/CSV, study reports
 autoresearch/ agent experiment loop (temporal-validation eval only)
 experiments/  one-off studies (hazard, adverse impact, reject inference)
 docs/         method.md (module map) · reproduce.md (full recipe) · data.md (provenance)
-tests/        pytest suite (43 tests)
+tests/        pytest suite (47 tests)
 dashboard/    Streamlit Scenario-A scorecard app
 ```
 
@@ -154,7 +155,7 @@ dashboard/    Streamlit Scenario-A scorecard app
   notebook experiments (`sqlite:///mlflow.db`); git tracks code.
 - `artifacts/manifest.json` records environment versions, split config,
   and artifact SHA-256 hashes.
-- `pytest` runs 43 tests covering performance-window logic (including the
+- `pytest` runs 47 tests covering performance-window logic (including the
   M-month eligibility boundary), WoE round-trips, cost-threshold argmin,
   PSI/calibration/metric claims on synthetic data, leakage guards, feature
   derivation, reject-augmentation weights, bootstrap CIs,
@@ -190,6 +191,11 @@ For a fresh agent session:
   gradually (~0.004–0.006 AUC per quarter over 2011–2013) rather than
   breaking suddenly. A semi-annual refit cadence is likely sufficient;
   `experiments/rolling_oot.py` re-validates any retrained bundle cheaply.
+  Per-vintage recalibration was tested and rejected
+  (`reports/recalibration_drift.md`): quarter-ahead raw probabilities
+  are already calibrated (ECE ~0.02), and recalibrators fit on the
+  adjacent tail degrade ECE/Brier in most windows — recalibrate only
+  at retrain time on a large validation window.
 - **Hazard/survival formulation.** Revisited with calibration and a
   gradient-boosted learner (`reports/hazard_model.md`): the discrete-time
   hazard model still trails the binary CatBoost by ~0.008 OOT AUC, but

@@ -474,3 +474,96 @@ def psi_report(df, bundle, derive_fn, forbidden, required_raw, n_bins=10):
     rep = pd.DataFrame(rows).sort_values('psi', ascending=False)
     rep.loc['TOTAL'] = ['ALL', round(rep['psi'].sum(), 4), '']
     return rep
+
+
+# ============================================================================
+# CONFORMAL INTERVALS (Venn-Abers)
+# ============================================================================
+def calibration_scores(bundle, derive_fn, interim_dir, split='valid'):
+    """Calibrated bundle scores + labels on a temporal split.
+
+    Used as the conformity set for Venn-Abers intervals in
+    src.conformal.venn_abers_intervals.
+    """
+    from src.utils import deserialize_data
+    interim = Path(interim_dir)
+    X_raw = deserialize_data(str(interim / f'X_{split}_raw.pkl'))
+    y = deserialize_data(str(interim / f'y_{split}.pkl'))
+    X = prepare_scoring_frame(X_raw, bundle, derive_fn)
+    p = extract_positive_proba(bundle['model'], X)
+    p = _apply_cal(bundle.get('calibrator'),
+                   bundle.get('calibrator_name'), p)
+    return np.asarray(y), np.asarray(p)
+
+
+def add_conformal_intervals(result, bundle, derive_fn, interim_dir,
+                            score_col='pd_score', split='valid'):
+    """Append pd_lower/pd_upper/pd_mid/interval_width to a scores frame."""
+    from src.conformal import interval_summary, venn_abers_intervals
+    y_cal, p_cal = calibration_scores(bundle, derive_fn, interim_dir,
+                                      split=split)
+    lo, hi, mid = venn_abers_intervals(
+        p_cal, y_cal, result[score_col].to_numpy())
+    result = result.copy()
+    result['pd_lower'] = lo
+    result['pd_upper'] = hi
+    result['pd_mid'] = mid
+    result['interval_width'] = hi - lo
+    print(interval_summary(lo, hi).to_string(index=False))
+    return result
+
+
+# ============================================================================
+# DRIFT REPORT (characteristic PSI + score-distribution PSI)
+# ============================================================================
+def score_distribution_psi(p_ref, p_new, n_bins=10):
+    """PSI between a reference score distribution and a new batch.
+
+    Bins are the reference deciles, so the comparison is like-for-like.
+    Returns (psi_total, verdict).
+    """
+    from src.population_stability_index import calculate_psi, psi_verdict
+    p_ref = np.asarray(p_ref, dtype=float)
+    p_new = np.asarray(p_new, dtype=float)
+    edges = np.unique(np.quantile(p_ref, np.linspace(0, 1, n_bins + 1)))
+    if len(edges) < 3:
+        return 0.0, psi_verdict(0.0)
+    b_ref = pd.cut(p_ref, bins=edges, include_lowest=True)
+    b_new = pd.cut(p_new, bins=edges, include_lowest=True)
+    res = calculate_psi(pd.Series(b_ref, name='score'),
+                        pd.Series(b_new, name='score'))
+    psi = float(res.attrs['psi_total'])
+    return psi, psi_verdict(psi)
+
+
+_VERDICT_RANK = {'Stable': 0, 'Moderate shift -- investigate': 1,
+                 'Significant shift -- recalibration/redevelopment likely required': 2}
+
+
+def drift_report(df, bundle, derive_fn, forbidden, required_raw,
+                 interim_dir, split='valid'):
+    """Full drift assessment for a scoring batch.
+
+    Returns dict with:
+      features   : characteristic-level PSI table (psi_report output)
+      score_psi  : scalar PSI of the score distribution vs validation
+      score_verdict / worst_verdict : band labels
+    """
+    from src.population_stability_index import psi_verdict
+    feat = psi_report(df, bundle, derive_fn, forbidden, required_raw)
+
+    validate_payload(df, forbidden, required_raw)
+    X = prepare_scoring_frame(df, bundle, derive_fn)
+    p_new = extract_positive_proba(bundle['model'], X)
+    p_new = _apply_cal(bundle.get('calibrator'),
+                       bundle.get('calibrator_name'), p_new)
+    _, p_ref = calibration_scores(bundle, derive_fn, interim_dir,
+                                  split=split)
+    psi_s, verdict_s = score_distribution_psi(p_ref, p_new)
+
+    verdicts = [verdict_s]
+    if len(feat):
+        verdicts += feat['verdict'].dropna().tolist()
+    worst = max(verdicts, key=lambda v: _VERDICT_RANK.get(v, 0))
+    return {'features': feat, 'score_psi': psi_s,
+            'score_verdict': verdict_s, 'worst_verdict': worst}

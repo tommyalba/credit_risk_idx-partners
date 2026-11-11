@@ -27,7 +27,9 @@ single primary metric.
   "features": "all" | ["col1", "col2", ...],
   "params": { ...estimator kwargs, merged over the family baseline... },
   "sampling": { "method": "smote | rus | nearmiss | clustercentroids",
-                "minority_frac": 0.30 }
+                "minority_frac": 0.30 },
+  "counts": "raw | twopart"   // optional: re-express heavy-zero count
+                            // features (see experiment.py COUNT_COLS)
 }
 ```
 

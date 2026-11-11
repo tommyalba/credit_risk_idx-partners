@@ -202,3 +202,50 @@ def should_calibrate(cal_leaderboard: pd.DataFrame, base_model_name: str) -> Tup
     
     return needs_calibration, best_version, best_row
 
+
+
+# ============================================================
+# CALIBRATION DIAGNOSTICS & LINEAR (LOGIT) RECALIBRATION
+# ============================================================
+def _logit(p):
+    p = np.clip(np.asarray(p, dtype=float), 1e-12, 1 - 1e-12)
+    return np.log(p / (1 - p))
+
+
+def _expit(z):
+    return 1.0 / (1.0 + np.exp(-z))
+
+
+def calibration_slope_intercept(y_true, p):
+    """Fit logit(y) ~ a + b * logit(p) on the given data.
+
+    Diagnostic, not a production calibrator: slope b < 1 means scores
+    are overconfident (too extreme), b > 1 underconfident; intercept a
+    captures level shift. Fit on a held-out split, interpret on it.
+    """
+    lr = LogisticRegression(C=1e6, solver='lbfgs', max_iter=1000,
+                            random_state=42)
+    lr.fit(_logit(p).reshape(-1, 1), np.asarray(y_true))
+    return {'intercept': float(lr.intercept_[0]),
+            'slope': float(lr.coef_[0][0])}
+
+
+def fit_logit_recalibration(p_cal, y_cal):
+    """Fit a + b * logit(p) -> probability map on a calibration set."""
+    d = calibration_slope_intercept(y_cal, p_cal)
+    return d['intercept'], d['slope']
+
+
+def apply_logit_recalibration(p, intercept, slope):
+    return _expit(intercept + slope * _logit(p))
+
+
+def expected_calibration_error(y_true, p, n_bins=10):
+    """ECE: sum over bins of (n_bin/N) * |empirical - predicted|."""
+    y = np.asarray(y_true)
+    p = np.asarray(p, dtype=float)
+    bins = pd.qcut(p, q=n_bins, duplicates='drop')
+    df = pd.DataFrame({'y': y, 'p': p, 'bin': bins})
+    g = df.groupby('bin', observed=True).agg(
+        emp=('y', 'mean'), pred=('p', 'mean'), n=('y', 'size'))
+    return float(((g['emp'] - g['pred']).abs() * g['n']).sum() / len(y))

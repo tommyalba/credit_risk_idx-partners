@@ -14,6 +14,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from pipeline.core import (  # noqa: E402
+    add_conformal_intervals,
+    drift_report,
     prepare_scoring_frame,
     psi_report as _psi_report,
     score_records,
@@ -26,6 +28,7 @@ from .features import (  # noqa: E402
 )
 
 BUNDLE_PATH = Path('models/scenario_b/scenario_b_bundle.joblib')
+INTERIM_DIR = Path('data/interim/scenario_b')
 # columns the derivation step needs as raw inputs
 REQUIRED_RAW = [
     'issue_d', 'earliest_cr_line', 'emp_length', 'loan_amnt', 'total_acc',
@@ -57,6 +60,9 @@ def main() -> None:
     ap.add_argument('--bundle', default=str(BUNDLE_PATH))
     ap.add_argument('--psi', action='store_true',
                     help='also report feature drift vs validation')
+    ap.add_argument('--intervals', action='store_true',
+                    help='add Venn-Abers PD intervals (slower on large '
+                         'batches)')
     args = ap.parse_args()
 
     path = Path(args.input)
@@ -67,9 +73,16 @@ def main() -> None:
                            FORBIDDEN_FEATURES, REQUIRED_RAW)
 
     if args.psi:
-        print(_psi_report(df, bundle, add_scenario_b_features,
-                          FORBIDDEN_FEATURES, REQUIRED_RAW)
-              .to_string(index=False))
+        rep = drift_report(df, bundle, add_scenario_b_features,
+                           FORBIDDEN_FEATURES, REQUIRED_RAW, INTERIM_DIR)
+        print(rep['features'].to_string(index=False))
+        print(f"\nscore PSI: {rep['score_psi']:.4f} "
+              f"({rep['score_verdict']})")
+        print(f"overall drift verdict: {rep['worst_verdict']}")
+
+    if args.intervals:
+        result = add_conformal_intervals(
+            result, bundle, add_scenario_b_features, INTERIM_DIR)
 
     if args.output:
         result.to_csv(args.output, index=False)

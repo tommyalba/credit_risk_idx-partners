@@ -7,7 +7,7 @@ PD(33) comparable to the binary model.
 Event/censoring definitions (consistent with src/performance_window.py):
   - BAD loans      : event at months(issue_d -> last_pymnt_d)   [project proxy]
   - Fully Paid     : censored at months(issue_d -> last_pymnt_d) (payoff ~ last pmt)
-  - Current        : censored at months(issue_d -> snapshot=2015-09-01)
+  - Current        : censored at months(issue_d -> snapshot=2016-01-01)
 All durations capped at M=33 to match the binary performance window.
 
 Features: same 12 derived features as the tree models (numeric + one-hot
@@ -101,17 +101,31 @@ def fit_hazard(Xtr_pp, y_pp, learner='lr'):
     model.fit(Xtr_pp, y_pp)
     return model
 
-def pd_within_M(model, X_loan, T_max=M):
-    """PD(event within M months) per loan via cumulative hazard product."""
+def hazard_matrix(model, X_loan, T_max=M):
+    """Monthly hazard h(t|x) for t=1..T_max. Returns n_loans x T_max."""
     rows = []
-    n = len(X_loan)
     for t in range(1, T_max + 1):
         Xt = X_loan.copy()
         Xt['period'] = t; Xt['period2'] = t * t; Xt['log_period'] = np.log(t)
-        h = model.predict_proba(Xt[model.feature_names_in_])[:, 1]
-        rows.append(h)
-    H = np.vstack(rows).T                      # n_loans x M hazards
-    return 1.0 - np.prod(1.0 - H, axis=1)
+        rows.append(model.predict_proba(Xt[model.feature_names_in_])[:, 1])
+    return np.vstack(rows).T                      # n_loans x M hazards
+
+def cum_pd(H, t):
+    """Cumulative PD(t) = 1 - prod_{s<=t}(1 - h_s) for each loan."""
+    return 1.0 - np.prod(1.0 - H[:, :t], axis=1)
+
+def pd_within_M(model, X_loan, T_max=M):
+    """PD(event within M months) per loan via cumulative hazard product."""
+    return cum_pd(hazard_matrix(model, X_loan, T_max), T_max)
+
+def median_event_time(H, T_max=M):
+    """Predicted median time-to-event per loan: first t with S(t) <= 0.5,
+    else T_max + 1 (survives past window)."""
+    S = np.cumprod(1.0 - H, axis=1)
+    hit = S <= 0.5
+    first = np.where(hit.any(axis=1),
+                     hit.argmax(axis=1) + 1, T_max + 1)
+    return first
 
 def metrics_row(y, p, name):
     p = np.clip(np.asarray(p, dtype=float), 1e-6, 1 - 1e-6)
@@ -179,7 +193,10 @@ def main():
     # Calibration fit on the LAST 15% of train (temporally adjacent to
     # valid), mirroring the pipeline's temporal discipline; valid/test
     # stay untouched until scoring.
-    pd33 = {s: pd_within_M(model, feats[s]) for s in ('train', 'valid', 'test')}
+    # Hazard matrix computed once per split; all horizon summaries below
+    # derive from it.
+    H = {s: hazard_matrix(model, feats[s]) for s in ('train', 'valid', 'test')}
+    pd33 = {s: cum_pd(H[s], M) for s in ('train', 'valid', 'test')}
 
     n_tr = len(feats['train'])
     cal_n = int(round(n_tr * 0.15))
@@ -230,6 +247,58 @@ def main():
     print('\ntest calibration deciles (isotonic):')
     print(cal.round(3).to_string())
     cal.to_csv(f'{ROOT}/reports/hazard_model_{args.learner}_deciles.csv')
+
+    # --- survival summaries on OOT (test) ---
+    # Cohort PD(t) curves by predicted-risk decile; expected-loss term
+    # structure with EAD = loan_amnt and canonical LGD = 0.55; median
+    # time-to-event observed vs predicted.
+    horizons = [6, 12, 24, M]
+    Xs, ys, Ts, evs = data['test']
+    p_iso = iso.predict(pd33['test'])
+    dec = pd.qcut(p_iso, 10, labels=False, duplicates='drop')
+    cohort_rows = []
+    for d in sorted(set(dec)):
+        m = np.asarray(dec == d)
+        row = {'decile': int(d), 'n': int(m.sum()),
+               'pd33_iso': float(p_iso[m].mean())}
+        for t in horizons:
+            row[f'pd_{t}m'] = float(cum_pd(H['test'][m], t).mean())
+        cohort_rows.append(row)
+    cohort = pd.DataFrame(cohort_rows)
+    cohort.to_csv(f'{ROOT}/reports/hazard_pd_curves_{args.learner}.csv',
+                  index=False)
+
+    lgd = 0.55
+    if 'loan_amnt' in Xs.columns:
+        ead = Xs['loan_amnt'].astype(float).to_numpy()
+    else:
+        ead = np.full(len(ys), 15e6)
+    el_rows = []
+    el_cum_prev = 0.0
+    for t in range(1, M + 1):
+        el_cum = float((ead * lgd * cum_pd(H['test'], t)).sum())
+        el_rows.append({'month': t,
+                        'el_cumulative_usd': el_cum,
+                        'el_marginal_usd': el_cum - el_cum_prev})
+        el_cum_prev = el_cum
+    el = pd.DataFrame(el_rows)
+    el.to_csv(f'{ROOT}/reports/hazard_el_term_{args.learner}.csv',
+              index=False)
+
+    med_obs = float(Ts[evs.to_numpy() == 1].median()) \
+        if (evs.to_numpy() == 1).any() else np.nan
+    med_pred_bads = float(np.median(median_event_time(H['test'][ys == 1])))
+    med_pred_all = float(np.median(median_event_time(H['test'])))
+    print(f'\n=== survival summaries (OOT, learner={args.learner}) ===')
+    print('cohort PD(t) by risk decile:')
+    print(cohort.round(4).to_string(index=False))
+    peak_m = int(el.loc[el.el_marginal_usd.idxmax(), 'month'])
+    print(f'EL cumulative at {M}m: '
+          f'{el.el_cumulative_usd.iloc[-1]/1e9:.2f}B USD '
+          f'(EAD=loan_amnt USD, LGD={lgd}); peak marginal month={peak_m}')
+    print(f'median time-to-event months: observed(bads)={med_obs:.1f} | '
+          f'predicted(bads)={med_pred_bads:.1f} | '
+          f'predicted(all)={med_pred_all:.1f}')
 
 if __name__ == '__main__':
     main()
