@@ -28,6 +28,11 @@ experiments/ one-off studies: survival hazard, adverse impact,
 autoresearch/ agent experiment loop: program.md protocol,
              experiment.py (temporal-validation eval only),
              configs/, results/trials.jsonl
+pipeline/    Scenario-B (post-origination) .py pipeline:
+             scenario_b/prepare.py (nb2-equivalent),
+             scenario_b/train.py (nb4-equivalent tree training +
+             calibration + cost threshold + bundle),
+             scenario_b/score.py (production scoring + PSI drift)
 ```
 
 ## Environment
