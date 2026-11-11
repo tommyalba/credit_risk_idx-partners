@@ -204,7 +204,7 @@ def _union_all_categoricals(frames):
 
 
 def run_training(interim_dir, derive_fn, out_dir, report_stem,
-                 scenario_label):
+                 scenario_label, report_dir='reports'):
     """Fit xgb/cat/lgbm, pick valid-AUC winner, calibrate, threshold, bundle.
 
     derive_fn: raw pickled frame -> model-feature frame.
@@ -266,7 +266,7 @@ def run_training(interim_dir, derive_fn, out_dir, report_stem,
     lb = pd.DataFrame(leaderboard)
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    lb.to_csv(out.parent / f'{report_stem}_leaderboard.csv', index=False)
+    lb.to_csv(Path(report_dir) / f'{report_stem}_leaderboard.csv', index=False)
 
     valid_lb = lb[lb['split'] == 'valid'].sort_values(
         ['roc_auc', 'log_loss'], ascending=[False, True])
@@ -287,7 +287,7 @@ def run_training(interim_dir, derive_fn, out_dir, report_stem,
         {'version': k, **calculate_probability_metrics(y_valid, p)}
         for k, (_, p) in candidates.items()
     ]).sort_values('brier_score')
-    cal_df.to_csv(out.parent / f'{report_stem}_calibration.csv',
+    cal_df.to_csv(Path(report_dir) / f'{report_stem}_calibration.csv',
                   index=False)
     best_version = cal_df.iloc[0]['version']
     calibrator, p_valid = candidates[best_version]
@@ -353,10 +353,10 @@ def run_training(interim_dir, derive_fn, out_dir, report_stem,
     report = {
         'winner': winner, 'calibration': best_version,
         'threshold': float(tau), 'metrics': bundle['metrics'],
-        'leaderboard_csv': str(out.parent / f'{report_stem}_leaderboard.csv'),
+        'leaderboard_csv': str(Path(report_dir) / f'{report_stem}_leaderboard.csv'),
         'elapsed_s': bundle['elapsed_s'],
     }
-    (out.parent / f'{report_stem}_metrics.json').write_text(
+    (Path(report_dir) / f'{report_stem}_metrics.json').write_text(
         json.dumps(report, indent=2))
     print(f'Saved {out}/{report_stem}_bundle.joblib')
     print(f'valid AUC {bundle["metrics"]["valid"]["roc_auc"]:.4f} | '

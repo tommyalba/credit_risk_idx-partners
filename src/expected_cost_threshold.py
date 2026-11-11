@@ -265,11 +265,10 @@ def compare_threshold_criteria(y_true, y_proba, c_fn, c_fp):
     # Kriteria 3: F1-maximal (PR curve)
     precisions, recalls, pr_thresholds = precision_recall_curve(y_true, y_proba)
     precisions_t, recalls_t = precisions[:-1], recalls[:-1]
-    f1_scores = np.where(
-        (precisions_t + recalls_t) > 0,
-        2 * precisions_t * recalls_t / (precisions_t + recalls_t),
-        0,
-    )
+    denom = precisions_t + recalls_t
+    f1_scores = np.zeros_like(denom, dtype=float)
+    np.divide(2 * precisions_t * recalls_t, denom, out=f1_scores,
+              where=denom > 0)
     tau_f1 = pr_thresholds[np.argmax(f1_scores)]
 
     return {

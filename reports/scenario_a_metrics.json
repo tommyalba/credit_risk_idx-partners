@@ -1,0 +1,25 @@
+{
+  "winner": "cat",
+  "calibration": "raw",
+  "threshold": 0.2882882882882883,
+  "metrics": {
+    "valid": {
+      "roc_auc": 0.6468036940629153,
+      "pr_auc": 0.2374736040772189,
+      "log_loss": 0.40244274308393846,
+      "brier_score": 0.121716775285474,
+      "gini": 0.29360738812583054,
+      "ks_statistic": 0.2148655430271355
+    },
+    "oot_test": {
+      "roc_auc": 0.6442389914147981,
+      "pr_auc": 0.21379980332726856,
+      "log_loss": 0.3897415330967193,
+      "brier_score": 0.11692933518531823,
+      "gini": 0.28847798282959625,
+      "ks_statistic": 0.21410239224556882
+    }
+  },
+  "leaderboard_csv": "models/scenario_a_leaderboard.csv",
+  "elapsed_s": 23.4
+}

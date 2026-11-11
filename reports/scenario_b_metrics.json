@@ -20,6 +20,6 @@
       "ks_statistic": 0.2482948723085403
     }
   },
-  "leaderboard_csv": "reports/scenario_b_leaderboard.csv",
-  "elapsed_s": 48.2
+  "leaderboard_csv": "models/scenario_b_leaderboard.csv",
+  "elapsed_s": 43.0
 }
