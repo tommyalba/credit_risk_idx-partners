@@ -141,6 +141,7 @@ artifacts/    binning_artifacts.pkl, manifest.json  (DVC-tracked)
 reports/      model cards, metrics JSON/CSV, study reports
 autoresearch/ agent experiment loop (temporal-validation eval only)
 experiments/  one-off studies (hazard, adverse impact, reject inference)
+docs/         method.md (module map) · reproduce.md (full recipe) · data.md (provenance)
 tests/        pytest suite (26 tests)
 dashboard/    Streamlit Scenario-A scorecard app
 ```
