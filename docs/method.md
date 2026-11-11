@@ -60,6 +60,7 @@ new scenarios should extend the spec, not copy core.
 | `shap_interpretability.py` | SHAP on tree models; values reported on the margin/log-odds scale |
 | `ensemble.py` | stacking/ensemble helpers (evaluated; single CatBoost won) |
 | `manifest.py` | `artifacts/manifest.json`: env versions, split config, artifact hashes |
+| `reject_inference.py` | reject-file ingestion, pseudo-label weights, augmented training set builder |
 
 ## Entry points beyond prepare/train/score
 
@@ -74,7 +75,11 @@ new scenarios should extend the spec, not copy core.
   `autoresearch/results/trials.jsonl`.
 - `experiments/`: one-off studies, not part of the production path:
   `reject_inference.py`, `adverse_impact.py`, `survival_hazard.py`,
-  `mths_features_and_lr_interactions.py`.
+  `mths_features_and_lr_interactions.py`, `rolling_oot.py`
+  (expanding-window quarterly OOT evaluation; see
+  `reports/rolling_oot_evaluation.md`), `reject_augmentation.py`
+  (trains Scenario A with a rejects file; see
+  `src/reject_inference.py`).
 - `dashboard/app.py`: Streamlit Scenario-A scorecard preview (no
   production scoring path yet).
 

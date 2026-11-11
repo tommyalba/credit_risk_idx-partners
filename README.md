@@ -142,7 +142,7 @@ reports/      model cards, metrics JSON/CSV, study reports
 autoresearch/ agent experiment loop (temporal-validation eval only)
 experiments/  one-off studies (hazard, adverse impact, reject inference)
 docs/         method.md (module map) · reproduce.md (full recipe) · data.md (provenance)
-tests/        pytest suite (36 tests)
+tests/        pytest suite (42 tests)
 dashboard/    Streamlit Scenario-A scorecard app
 ```
 
@@ -154,10 +154,10 @@ dashboard/    Streamlit Scenario-A scorecard app
   notebook experiments (`sqlite:///mlflow.db`); git tracks code.
 - `artifacts/manifest.json` records environment versions, split config,
   and artifact SHA-256 hashes.
-- `pytest` runs 36 tests covering performance-window logic (including the
+- `pytest` runs 42 tests covering performance-window logic (including the
   M-month eligibility boundary), WoE round-trips, cost-threshold argmin,
   PSI/calibration/metric claims on synthetic data, leakage guards, feature
-  derivation, and scoring round-trips.
+  derivation, reject-augmentation weights, and scoring round-trips.
 
 ## Agent / contributor orientation
 
@@ -176,13 +176,19 @@ For a fresh agent session:
 ## Future directions
 
 - **Reject-level data.** The largest known bias is Scenario A's funded-only
-  training population. Even a small sample of rejected applications with
-  bureau attributes would enable proper reject inference or fuzzy
-  augmentation; until then the sensitivity bounds in
-  `reports/reject_inference.md` are the honest statement of uncertainty.
-- **Rolling-origin evaluation.** The single 2013Q1 OOT window is thin;
-  rolling quarterly OOT would quantify temporal stability instead of one
-  snapshot.
+  training population. The ingestion path is implemented
+  (`src/reject_inference.py`, `experiments/reject_augmentation.py`):
+  given a rejects file it trains on funded loans plus rejects, using
+  real outcome labels when available (`--label-col`) or model-PD fuzzy
+  labels otherwise. What remains is the data itself — even a small
+  sample of rejected applications with bureau attributes. Until then
+  the sensitivity bounds in `reports/reject_inference.md` are the
+  honest statement of uncertainty.
+- **Scheduled retraining.** Rolling-origin evaluation
+  (`reports/rolling_oot_evaluation.md`) shows discrimination decays
+  gradually (~0.004–0.006 AUC per quarter over 2011–2013) rather than
+  breaking suddenly. A semi-annual refit cadence is likely sufficient;
+  `experiments/rolling_oot.py` re-validates any retrained bundle cheaply.
 - **Hazard/survival formulation.** A discrete-time hazard model was
   prototyped (`experiments/survival_hazard.py`): it underperformed the
   binary models on AUC but offers a principled PD(t) + censoring view.
