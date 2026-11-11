@@ -22,7 +22,7 @@ file is the full recipe.
 ```bash
 conda activate credit-risk_VENV
 pip install -r requirements.txt          # or: conda env create -f environment.yml
-pytest                                   # 26 tests, expect all green
+pytest                                   # 36 tests, expect all green
 ```
 
 ## Launch: full pipeline
