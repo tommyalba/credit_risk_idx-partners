@@ -11,7 +11,7 @@ from src.population_stability_index import calculate_psi, psi_verdict, psi_repor
 from src.calibration_selection import brier_skill_score, reliability_table
 from src.calibration import CALIBRATION_STRATEGIES
 from src.performance_window import apply_performance_window_filter
-from src.metrics import calculate_probability_metrics
+from src.metrics import calculate_probability_metrics, bootstrap_metric_ci
 from src.ks_statistic_evaluation import compute_ks_statistic
 
 
@@ -112,6 +112,19 @@ def test_auc_random_scores_near_half():
 # ---------------------------------------------------------------------------
 # Performance window: Current eligible iff age >= M (month granularity)
 # ---------------------------------------------------------------------------
+
+def test_bootstrap_ci_covers_point_and_is_narrow():
+    rng = np.random.default_rng(7)
+    y = pd.Series((rng.random(2000) > 0.85).astype(int))
+    # mildly informative scores -> tight AUC interval away from 0.5/1
+    p = 0.1 + 0.5 * y.to_numpy() + rng.normal(0, 0.1, 2000)
+    p = np.clip(p, 0.01, 0.99)
+    ci = bootstrap_metric_ci(y, p, n_boot=200, seed=1)
+    a = ci['roc_auc']
+    assert a['lo'] < a['point'] < a['hi']
+    assert a['hi'] - a['lo'] < 0.1  # n=2000 -> narrow interval
+    assert ci['log_loss']['n_boot_used'] == 200
+
 
 def test_performance_window_boundary_at_M():
     snapshot = pd.Timestamp("2016-01-01")

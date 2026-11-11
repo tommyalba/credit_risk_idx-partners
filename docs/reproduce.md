@@ -89,3 +89,8 @@ fields), feature derivation, and scoring round-trips.
 Headline metrics live in `reports/scenario_{a,b}_metrics.json`;
 per-family detail in `reports/scenario_{a,b}_leaderboard.csv`; human
 summaries in `reports/scenario_{a,b}_model_card.md`.
+
+Metric uncertainty: `python experiments/metric_ci.py` writes bootstrap
+95% CIs for AUC/log-loss/Brier/PR-AUC on both temporal splits to
+`reports/metric_ci.csv`; `python -m pipeline.explain --scenario a
+--bootstrap` prints the same for one scenario.

@@ -104,3 +104,64 @@ def print_report_and_cm(y_true, y_pred, title):
         columns=['Pred GOOD (0)', 'Pred BAD (1)']
     )
     return cm_df
+
+
+# ============================================================
+# BOOTSTRAP CONFIDENCE INTERVALS
+# ============================================================
+def bootstrap_metric_ci(y_true, y_proba, n_boot=1000, seed=42,
+                         alpha=0.05,
+                         metric_names=('roc_auc', 'log_loss',
+                                       'brier_score')):
+    """
+    Percentile bootstrap CIs for probability metrics.
+
+    Resamples rows with replacement within the given split (never across
+    splits, preserving the temporal evaluation design), recomputes each
+    metric, and returns the (1-alpha) percentile interval plus the
+    bootstrap mean. Resamples lacking both classes are skipped.
+
+    Returns
+    -------
+    dict: metric -> {'point', 'mean', 'lo', 'hi', 'n_boot_used'}
+    """
+    y = np.asarray(y_true)
+    p = np.asarray(y_proba, dtype=float)
+    n = len(y)
+    rng = np.random.default_rng(seed)
+
+    fns = {
+        'roc_auc': roc_auc_score,
+        'log_loss': log_loss,
+        'brier_score': brier_score_loss,
+        'pr_auc': average_precision_score,
+    }
+    unknown = set(metric_names) - set(fns)
+    if unknown:
+        raise ValueError(f'unknown metrics: {unknown}')
+
+    draws = {m: [] for m in metric_names}
+    point = calculate_probability_metrics(y, p)
+    for _ in range(n_boot):
+        idx = rng.integers(0, n, n)
+        yb, pb = y[idx], p[idx]
+        if len(np.unique(yb)) < 2:
+            continue
+        for m in metric_names:
+            try:
+                draws[m].append(float(fns[m](yb, pb)))
+            except ValueError:
+                continue
+
+    lo_q, hi_q = 100 * alpha / 2, 100 * (1 - alpha / 2)
+    out = {}
+    for m in metric_names:
+        arr = np.asarray(draws[m])
+        out[m] = {
+            'point': float(point[m]),
+            'mean': float(arr.mean()) if len(arr) else np.nan,
+            'lo': float(np.percentile(arr, lo_q)) if len(arr) else np.nan,
+            'hi': float(np.percentile(arr, hi_q)) if len(arr) else np.nan,
+            'n_boot_used': int(len(arr)),
+        }
+    return out

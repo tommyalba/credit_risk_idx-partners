@@ -81,7 +81,8 @@ new scenarios should extend the spec, not copy core.
   (trains Scenario A with a rejects file; see
   `src/reject_inference.py`); `survival_hazard.py` also takes
   `--learner lr|hgb` (discrete-time hazard; see
-  `reports/hazard_model.md`).
+  `reports/hazard_model.md`), `metric_ci.py`
+  (bootstrap CIs on the temporal splits; see `reports/metric_ci.csv`).
 - `dashboard/app.py`: Streamlit Scenario-A scorecard preview (no
   production scoring path yet).
 

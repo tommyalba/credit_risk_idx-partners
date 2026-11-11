@@ -6,6 +6,7 @@ Usage:
     python -m pipeline.explain --scenario a --cost
     python -m pipeline.explain --scenario a --lr            # nb3 coefficients
     python -m pipeline.explain --scenario b --input records.csv --shap
+    python -m pipeline.explain --scenario a --bootstrap   # metric CIs
 """
 import argparse
 import sys
@@ -30,6 +31,8 @@ from pipeline.scenario_b import score as score_b  # noqa: E402
 from pipeline.scenario_b.features import (  # noqa: E402
     add_scenario_b_features,
 )
+from src.evaluation import extract_positive_proba  # noqa: E402
+from src.metrics import bootstrap_metric_ci          # noqa: E402
 from src.utils import deserialize_data  # noqa: E402
 
 SCENARIOS = {
@@ -113,6 +116,39 @@ def section_cost(spec, bundle, X, y):
     print(compare_threshold_criteria(y, p, c_fn=8_250_000, c_fp=2_700_000))
 
 
+def _split_frame(spec, bundle, split):
+    """Full temporal split (valid|test) -> (X_model_ready, y)."""
+    X_raw = deserialize_data(
+        str(spec['interim'] / f'X_{split}_raw.pkl'))
+    y = deserialize_data(str(spec['interim'] / f'y_{split}.pkl'))
+    return prepare_scoring_frame(X_raw, bundle, spec['derive']), y
+
+
+def _calibrated_proba(bundle, X):
+    p = extract_positive_proba(bundle['model'], X)
+    from pipeline.core import _apply_cal
+    return _apply_cal(bundle.get('calibrator'),
+                      bundle.get('calibrator_name'), p)
+
+
+def section_bootstrap(spec, bundle, n_boot):
+    print(f'\n=== Bootstrap CIs ({n_boot} resamples, 95%) ===')
+    rows = []
+    for split in ('valid', 'test'):
+        X, y = _split_frame(spec, bundle, split)
+        p = _calibrated_proba(bundle, X)
+        cis = bootstrap_metric_ci(
+            y, p, n_boot=n_boot,
+            metric_names=('roc_auc', 'log_loss', 'brier_score', 'pr_auc'))
+        for metric in cis:
+            r = cis[metric]
+            rows.append({'split': split, 'metric': metric,
+                         'point': r['point'], 'lo': r['lo'],
+                         'hi': r['hi']})
+    df = pd.DataFrame(rows)
+    print(df.to_string(index=False))
+
+
 def section_lr():
     if not LR_MODEL.exists():
         print(f'\n=== LR coefficients ===\nskipped: {LR_MODEL} not found')
@@ -144,6 +180,10 @@ def main():
     ap.add_argument('--cost', action='store_true')
     ap.add_argument('--lr', action='store_true',
                     help='print nb3 LogisticRegression coefficients')
+    ap.add_argument('--bootstrap', action='store_true',
+                    help='bootstrap 95% CIs on valid + OOT metrics')
+    ap.add_argument('--boot', type=int, default=1000,
+                    help='bootstrap resamples (with --bootstrap)')
     args = ap.parse_args()
 
     spec, bundle = _load(args.scenario)
@@ -154,7 +194,7 @@ def main():
     print(f'valid AUC {m["valid"]["roc_auc"]:.4f} | '
           f'OOT AUC {m["oot_test"]["roc_auc"]:.4f}')
 
-    do_all = not (args.shap or args.cost or args.lr)
+    do_all = not (args.shap or args.cost or args.lr or args.bootstrap)
     X, y = None, None
     if do_all or args.shap or args.cost:
         X, y = _valid_frame(spec, bundle, args.input, args.n)
@@ -163,6 +203,8 @@ def main():
         section_shap(spec, bundle, X, args.n)
     if do_all or args.cost:
         section_cost(spec, bundle, X, y)
+    if do_all or args.bootstrap:
+        section_bootstrap(spec, bundle, args.boot)
     if do_all or args.lr:
         if args.scenario == 'a':
             section_lr()

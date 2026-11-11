@@ -142,7 +142,7 @@ reports/      model cards, metrics JSON/CSV, study reports
 autoresearch/ agent experiment loop (temporal-validation eval only)
 experiments/  one-off studies (hazard, adverse impact, reject inference)
 docs/         method.md (module map) · reproduce.md (full recipe) · data.md (provenance)
-tests/        pytest suite (42 tests)
+tests/        pytest suite (43 tests)
 dashboard/    Streamlit Scenario-A scorecard app
 ```
 
@@ -154,10 +154,11 @@ dashboard/    Streamlit Scenario-A scorecard app
   notebook experiments (`sqlite:///mlflow.db`); git tracks code.
 - `artifacts/manifest.json` records environment versions, split config,
   and artifact SHA-256 hashes.
-- `pytest` runs 42 tests covering performance-window logic (including the
+- `pytest` runs 43 tests covering performance-window logic (including the
   M-month eligibility boundary), WoE round-trips, cost-threshold argmin,
   PSI/calibration/metric claims on synthetic data, leakage guards, feature
-  derivation, reject-augmentation weights, and scoring round-trips.
+  derivation, reject-augmentation weights, bootstrap CIs,
+  and scoring round-trips.
 
 ## Agent / contributor orientation
 
