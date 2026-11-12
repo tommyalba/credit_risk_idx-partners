@@ -81,7 +81,7 @@ bundles ship uncalibrated models.
 
 ### Bias and fairness findings
 
-- **Reject inference** (`reports/reject_inference.md`): the extract holds
+- **Reject inference** (`experiments/reports/reject_inference.md`): the extract holds
   funded loans only, so Scenario A PDs are optimistic for the true
   applicant pool. A sensitivity analysis bounds the bias: applicant-pool
   PD is plausibly 1.4–1.9× the funded estimate, and the funded-tuned
@@ -92,12 +92,12 @@ bundles ship uncalibrated models.
   ratio < 0.80 on 60-month terms, `small_business` purpose, and the top
   loan-to-income tercile. Income itself is clean.
 - **Calibration parity** (`experiments/calibration_parity.py`,
-  `reports/calibration_parity.md`): PDs mean roughly the same thing
+  `experiments/reports/calibration_parity.md`): PDs mean roughly the same thing
   across segments (gaps of a few pp, mostly the global over-prediction
   direction), with two exceptions to monitor — `small_business` risk is
   under-predicted by ~5pp while also showing adverse impact, and
   60-month terms are over-predicted by ~6pp on OOT.
-- **Class imbalance** (`reports/class_imbalance_sampling.md`): SMOTE
+- **Class imbalance** (`experiments/reports/class_imbalance_sampling.md`): SMOTE
   hurts monotonically; random undersampling is AUC-neutral but breaks
   calibration. Resampling is not a lever for gradient-boosted trees here.
 
@@ -117,7 +117,7 @@ python -m pipeline.scenario_b.prepare && python -m pipeline.scenario_b.train
 # score batches
 python -m pipeline.scenario_a.score applications.csv -o scores_a.csv --psi
 python -m pipeline.scenario_b.score funded.csv -o scores_b.csv --psi
-# add --intervals for Venn-Abers PD intervals (see reports/conformal_coverage.md)
+# add --intervals for Venn-Abers PD intervals (see experiments/reports/conformal_coverage.md)
 
 # unified lifecycle scoring (one CSV -> both PDs)
 python -m pipeline.infer records.csv -o lifecycle_scores.csv
@@ -145,11 +145,11 @@ pipeline/     .py production pipeline: core.py engine, scenario_a/ and
 data/         raw -> interim -> processed          (DVC-tracked)
 models/       serialized bundles                    (DVC-tracked)
 artifacts/    binning_artifacts.pkl, manifest.json  (DVC-tracked)
-reports/      model cards, metrics JSON/CSV, study reports
+reports/      model cards, metrics JSON/CSV, scenario outputs
+experiments/  one-off studies + experiments/reports/ study reports
 autoresearch/ agent experiment loop (temporal-validation eval only)
-experiments/  one-off studies (hazard, adverse impact, reject inference)
 docs/         method.md (module map) · reproduce.md (full recipe) · data.md (provenance)
-tests/        pytest suite (47 tests)
+tests/        pytest suite (48 tests)
 dashboard/    Streamlit Scenario-A scorecard app
 ```
 
@@ -161,7 +161,7 @@ dashboard/    Streamlit Scenario-A scorecard app
   notebook experiments (`sqlite:///mlflow.db`); git tracks code.
 - `artifacts/manifest.json` records environment versions, split config,
   and artifact SHA-256 hashes.
-- `pytest` runs 47 tests covering performance-window logic (including the
+- `pytest` runs 48 tests covering performance-window logic (including the
   M-month eligibility boundary), WoE round-trips, cost-threshold argmin,
   PSI/calibration/metric claims on synthetic data, leakage guards, feature
   derivation, reject-augmentation weights, bootstrap CIs,
@@ -190,20 +190,20 @@ For a fresh agent session:
   real outcome labels when available (`--label-col`) or model-PD fuzzy
   labels otherwise. What remains is the data itself — even a small
   sample of rejected applications with bureau attributes. Until then
-  the sensitivity bounds in `reports/reject_inference.md` are the
+  the sensitivity bounds in `experiments/reports/reject_inference.md` are the
   honest statement of uncertainty.
 - **Scheduled retraining.** Rolling-origin evaluation
-  (`reports/rolling_oot_evaluation.md`) shows discrimination decays
+  (`experiments/reports/rolling_oot_evaluation.md`) shows discrimination decays
   gradually (~0.004–0.006 AUC per quarter over 2011–2013) rather than
   breaking suddenly. A semi-annual refit cadence is likely sufficient;
   `experiments/rolling_oot.py` re-validates any retrained bundle cheaply.
   Per-vintage recalibration was tested and rejected
-  (`reports/recalibration_drift.md`): quarter-ahead raw probabilities
+  (`experiments/reports/recalibration_drift.md`): quarter-ahead raw probabilities
   are already calibrated (ECE ~0.02), and recalibrators fit on the
   adjacent tail degrade ECE/Brier in most windows — recalibrate only
   at retrain time on a large validation window.
 - **Hazard/survival formulation.** Revisited with calibration and a
-  gradient-boosted learner (`reports/hazard_model.md`): the discrete-time
+  gradient-boosted learner (`experiments/reports/hazard_model.md`): the discrete-time
   hazard model still trails the binary CatBoost by ~0.008 OOT AUC, but
   calibration fixes its PD level and it uniquely provides PD(t)
   curves. Retained as the right tool if term-structure or

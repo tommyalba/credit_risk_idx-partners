@@ -117,8 +117,8 @@ def main():
                   f'{worst["gap"]:+.3f} ({worst["segment"]}) | '
                   f'flagged {len(flag)}/{len(t)}')
     out = pd.concat(all_rows, ignore_index=True)
-    out.to_csv(f'{ROOT}/reports/calibration_parity.csv', index=False)
-    print(f'\nsaved reports/calibration_parity.csv ({len(out)} rows)')
+    out.to_csv(f'{ROOT}/experiments/reports/calibration_parity.csv', index=False)
+    print(f'\nsaved experiments/reports/calibration_parity.csv ({len(out)} rows)')
 
 
 if __name__ == '__main__':

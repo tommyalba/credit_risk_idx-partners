@@ -11,7 +11,7 @@ temporal validation split and asks two questions:
 Also reports ECE (expected calibration error) per version.
 
 Usage: python experiments/calibration_slope.py
-Writes reports/calibration_slope.csv and prints a summary table.
+Writes experiments/reports/calibration_slope.csv and prints a summary table.
 """
 import sys
 from pathlib import Path
@@ -98,12 +98,12 @@ def main():
         })
 
     df = pd.DataFrame(rows)
-    df.to_csv('reports/calibration_slope.csv', index=False)
+    df.to_csv('experiments/reports/calibration_slope.csv', index=False)
     cols = ['scenario', 'split', 'version', 'slope_own_fit',
             'intercept_own_fit', 'ece', 'roc_auc', 'log_loss',
             'brier_score']
     print(df[cols].round(4).to_string(index=False))
-    print('\nwrote reports/calibration_slope.csv')
+    print('\nwrote experiments/reports/calibration_slope.csv')
 
 
 if __name__ == '__main__':

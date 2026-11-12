@@ -26,7 +26,7 @@ distribution (same-X assumption) and reject TRUE PDs are shifted:
 Never loads data/interim/X_test_raw.pkl or y_test.pkl (OOT untouched).
 
 Usage: python experiments/reject_inference.py
-Writes: reports/reject_inference_results.csv and prints a summary table.
+Writes: experiments/reports/reject_inference_results.csv and prints a summary table.
 """
 import sys
 from pathlib import Path
@@ -177,7 +177,7 @@ def main():
             })
 
     df = pd.DataFrame(rows)
-    out = ROOT / "reports" / "reject_inference_results.csv"
+    out = ROOT / "experiments" / "reports" / "reject_inference_results.csv"
     df.to_csv(out, index=False)
     print(f"\nwrote {out}\n")
     print(df.to_string(index=False))

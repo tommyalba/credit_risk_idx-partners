@@ -92,8 +92,8 @@ def main():
         for col, t in tabs.items():
             out[f'{split}|{col}'] = t
     pd.concat(out, names=['split', 'group']).to_csv(
-        f'{ROOT}/reports/adverse_impact.csv')
-    print(f'\nsaved reports/adverse_impact.csv')
+        f'{ROOT}/experiments/reports/adverse_impact.csv')
+    print(f'\nsaved experiments/reports/adverse_impact.csv')
 
 if __name__ == '__main__':
     main()

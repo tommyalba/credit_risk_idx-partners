@@ -8,7 +8,7 @@ difference?" — compare interval overlap, not point estimates.
 Usage:
     python experiments/metric_ci.py [--boot 1000]
 
-Writes reports/metric_ci.csv and prints a summary table.
+Writes experiments/reports/metric_ci.csv and prints a summary table.
 """
 import argparse
 import sys
@@ -78,8 +78,8 @@ def main():
                   f"[{a['lo']:.4f}, {a['hi']:.4f}]", flush=True)
 
     df = pd.DataFrame(rows)
-    df.to_csv('reports/metric_ci.csv', index=False)
-    print('\nwrote reports/metric_ci.csv')
+    df.to_csv('experiments/reports/metric_ci.csv', index=False)
+    print('\nwrote experiments/reports/metric_ci.csv')
     print(df.pivot_table(index=['scenario', 'split', 'metric'],
                          values=['point', 'ci_lo', 'ci_hi'])
           .round(4).to_string())

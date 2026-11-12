@@ -38,7 +38,7 @@ session transcript / rerun for the full table).
   conditional on the fitted bundle; it says nothing about how the model
   itself would change under resampling. For total predictive
   uncertainty, combine with the bootstrap metric CIs
-  (`reports/metric_ci.csv`) or the τ-sensitivity analysis (Session 4).
+  (`experiments/reports/metric_ci.csv`) or the τ-sensitivity analysis (Session 4).
 - **pd_score can fall outside its own interval** (it does ~90% of the
   time here). That is normal: the interval brackets the imprecise
   calibrated probability, not the point score. Use `pd_mid` as the

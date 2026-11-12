@@ -2,7 +2,7 @@
 
 Session 2 of the robustness roadmap. Script:
 `experiments/calibration_slope.py`; data:
-`reports/calibration_slope.csv`. Primitives added to
+`experiments/reports/calibration_slope.csv`. Primitives added to
 `src/calibration.py`: `calibration_slope_intercept`,
 `fit_logit_recalibration`, `apply_logit_recalibration`,
 `expected_calibration_error`.

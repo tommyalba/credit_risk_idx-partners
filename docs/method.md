@@ -77,27 +77,27 @@ new scenarios should extend the spec, not copy core.
   `autoresearch/program.md`; trials append to
   `autoresearch/results/trials.jsonl`. Configs may set `sampling`
   (fit-split resampling) and `counts` (raw / two-part re-expression of
-  heavy-zero count features; see `reports/feature_representation.md`).
-- `experiments/`: one-off studies, not part of the production path:
+  heavy-zero count features; see `experiments/reports/feature_representation.md`).
+- `experiments/` (+ `experiments/reports/` outputs): one-off studies, not part of the production path:
   `reject_inference.py`, `adverse_impact.py`,
   `calibration_parity.py` (per-segment calibration gap + slope; see
-  `reports/calibration_parity.md`),
+  `experiments/reports/calibration_parity.md`),
   `mths_features_and_lr_interactions.py`, `rolling_oot.py`
   (expanding-window quarterly OOT evaluation; see
-  `reports/rolling_oot_evaluation.md`), `reject_augmentation.py`
+  `experiments/reports/rolling_oot_evaluation.md`), `reject_augmentation.py`
   (trains Scenario A with a rejects file; see
   `src/reject_inference.py`), `survival_hazard.py`
   (discrete-time hazard, `--learner lr|hgb`; emits PD(t) cohort curves,
   EL term structure, and time-to-event summaries; see
-  `reports/hazard_model.md` and `reports/hazard_pd_curves.md`),
+  `experiments/reports/hazard_model.md` and `experiments/reports/hazard_pd_curves.md`),
   `metric_ci.py`
-  (bootstrap CIs on the temporal splits; see `reports/metric_ci.csv`),
+  (bootstrap CIs on the temporal splits; see `experiments/reports/metric_ci.csv`),
   `recalibration_drift.py` (per-quarter recalibration transfer test;
-  see `reports/recalibration_drift.md`), `calibration_slope.py`
+  see `experiments/reports/recalibration_drift.md`), `calibration_slope.py`
   (logit slope/intercept + ECE + OOT transfer test; see
-  `reports/calibration_slope.md`), `tau_ci.py`
+  `experiments/reports/calibration_slope.md`), `tau_ci.py`
   (bootstrap CI on the cost-optimal threshold; see
-  `reports/threshold_ci.md`).
+  `experiments/reports/threshold_ci.md`).
 - `dashboard/app.py`: Streamlit Scenario-A scorecard preview (no
   production scoring path yet).
 

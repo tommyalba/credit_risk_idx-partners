@@ -20,7 +20,7 @@ Usage:
         --label-col target --reject-weight 0.5
 
 Never loads data/interim/X_test_raw.pkl or y_test.pkl (OOT untouched).
-Writes reports/reject_augmentation.json.
+Writes experiments/reports/reject_augmentation.json.
 """
 import argparse
 import json
@@ -143,7 +143,7 @@ def main():
         'valid_bad_rate': float(y_valid.mean()),
         'elapsed_s': round(time.time() - t0, 1),
     }
-    Path('reports/reject_augmentation.json').write_text(
+    Path('experiments/reports/reject_augmentation.json').write_text(
         json.dumps(report, indent=2))
     print(json.dumps(report, indent=2))
 

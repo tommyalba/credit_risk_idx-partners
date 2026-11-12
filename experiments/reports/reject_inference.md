@@ -17,7 +17,7 @@ application-level features for rejected applicants to augment.
 
 ## Method
 
-`scripts`: `experiments/reject_inference.py` → `reports/reject_inference_results.csv`.
+`scripts`: `experiments/reject_inference.py` → `experiments/reports/reject_inference_results.csv`.
 
 1. Score the temporal validation split (10,596 funded loans, Nov–Dec 2012
    vintage) with `models/cat_raw_stage_A_winner.joblib` — the raw-probability
@@ -90,7 +90,7 @@ State explicitly: *"PDs are conditional on loan funding (Scenario A). The
 model was trained and validated on funded loans only; rejected/withdrawn
 applicants are unobserved. On the validation vintage the funded bad rate is
 14.8% and approved-book bad rate 13.5% at τ = 0.288. Sensitivity analysis
-(`reports/reject_inference.md`) indicates true applicant-pool PD is plausibly
+(`experiments/reports/reject_inference.md`) indicates true applicant-pool PD is plausibly
 1.4–1.9× higher and the cost-optimal threshold plausibly lower (~0.12–0.18)
 once reject risk is accounted for. Absolute PD calibration for the applicant
 population cannot be guaranteed without reject-level data."*
@@ -99,5 +99,5 @@ population cannot be guaranteed without reject-level data."*
 
 ```bash
 conda activate credit-risk_VENV
-python experiments/reject_inference.py   # writes reports/reject_inference_results.csv
+python experiments/reject_inference.py   # writes experiments/reports/reject_inference_results.csv
 ```

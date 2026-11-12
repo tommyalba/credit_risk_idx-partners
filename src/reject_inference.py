@@ -1,7 +1,7 @@
 """Reject-level data ingestion and fuzzy augmentation.
 
 The canonical training population contains funded loans only; rejected
-applications are unobserved (see reports/reject_inference.md for the
+applications are unobserved (see experiments/reports/reject_inference.md for the
 sensitivity bounds this creates). This module provides the machinery to
 fold a reject sample into Scenario-A training once such data exists.
 

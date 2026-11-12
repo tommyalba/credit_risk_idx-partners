@@ -2,7 +2,7 @@
 
 Companion to `reports/adverse_impact` findings. Script:
 `experiments/calibration_parity.py`; data:
-`reports/calibration_parity.csv` (73 segment rows across 9 groupings,
+`experiments/reports/calibration_parity.csv` (73 segment rows across 9 groupings,
 valid + OOT). Predictions are the production Scenario-A bundle's
 `pd_score` (raw probabilities; the bundle calibrator is `None`).
 
@@ -26,7 +26,7 @@ no protected-class labels exist, so these are directional findings.
 
 - **Level**: the model slightly over-predicts on both splits
   (mean PD 0.154 vs bad 0.148 valid; 0.156 vs 0.139 OOT), consistent
-  with the negative intercept in `reports/calibration_slope.md`.
+  with the negative intercept in `experiments/reports/calibration_slope.md`.
 - **Within-group slopes are mostly < 1** (mean 0.91 valid / 0.89 OOT):
   the overconfidence found globally also holds inside segments.
 - **Worst OOT gaps**: 60-month term over-predicts by 5.7pp

@@ -22,7 +22,7 @@ file is the full recipe.
 ```bash
 conda activate credit-risk_VENV
 pip install -r requirements.txt          # or: conda env create -f environment.yml
-pytest                                   # 42 tests, expect all green
+pytest                                   # 48 tests, expect all green
 ```
 
 ## Launch: full pipeline
@@ -56,6 +56,9 @@ python -m pipeline.explain --scenario b --shap --n 1000 --input records.csv
 
 `--psi` compares the batch's feature distributions against the
 validation decile reference embedded in the bundle.
+
+`--intervals` costs two isotonic fits per row — fine for application
+batches; subsample to a few thousand rows for large evaluation frames.
 
 ## Launch: autoresearch loop
 
@@ -92,21 +95,21 @@ per-family detail in `reports/scenario_{a,b}_leaderboard.csv`; human
 summaries in `reports/scenario_{a,b}_model_card.md`.
 
 Threshold uncertainty: `python experiments/tau_ci.py` bootstraps the
-cost-optimal τ on validation (`reports/threshold_ci.csv`,
-`reports/threshold_ci.md`).
+cost-optimal τ on validation (`experiments/reports/threshold_ci.csv`,
+`experiments/reports/threshold_ci.md`).
 
 Fairness diagnostics: `python experiments/adverse_impact.py` and
 `python experiments/calibration_parity.py` (AIRs and per-segment
 calibration gaps/slopes on valid + OOT).
 
 Per-vintage recalibration check: `python experiments/recalibration_drift.py
---scenario a|b` (quarterly refits; `reports/recalibration_drift_*.csv`).
+--scenario a|b` (quarterly refits; `experiments/reports/recalibration_drift_*.csv`).
 
 Calibration diagnostics: `python experiments/calibration_slope.py`
 writes slope/intercept, ECE, and transfer-test metrics to
-`reports/calibration_slope.csv` (see `reports/calibration_slope.md`).
+`experiments/reports/calibration_slope.csv` (see `experiments/reports/calibration_slope.md`).
 
 Metric uncertainty: `python experiments/metric_ci.py` writes bootstrap
 95% CIs for AUC/log-loss/Brier/PR-AUC on both temporal splits to
-`reports/metric_ci.csv`; `python -m pipeline.explain --scenario a
+`experiments/reports/metric_ci.csv`; `python -m pipeline.explain --scenario a
 --bootstrap` prints the same for one scenario.

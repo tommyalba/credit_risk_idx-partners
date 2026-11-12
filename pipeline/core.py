@@ -307,11 +307,13 @@ def run_training(interim_dir, derive_fn, out_dir, report_stem,
         edges = np.unique(np.quantile(s.dropna(), np.linspace(0, 1, 11)))
         if len(edges) < 3:
             continue
-        binned = pd.cut(s, bins=edges, include_lowest=True)
+        codes = pd.cut(s, bins=edges, include_lowest=True,
+                       labels=False)
+        valid = codes.notna()
         ref_edges[feat] = edges.tolist()
-        ref_probs[feat] = (binned.value_counts(normalize=True, sort=False)
-                           .reindex(range(len(edges) - 1),
-                                    fill_value=0.0).tolist())
+        ref_probs[feat] = (np.bincount(
+            codes[valid].astype(int), minlength=len(edges) - 1)
+            / valid.sum()).tolist()
 
     bundle = {
         'scenario': scenario_label,
@@ -461,19 +463,20 @@ def psi_report(df, bundle, derive_fn, forbidden, required_raw, n_bins=10):
         if feat not in X.columns:
             continue
         edges = np.asarray(edges, dtype=float)
-        s_new = pd.cut(pd.to_numeric(X[feat], errors='coerce'),
-                       bins=edges, include_lowest=True)
+        codes = pd.cut(pd.to_numeric(X[feat], errors='coerce'),
+                       bins=edges, include_lowest=True, labels=False)
+        valid = codes.notna()
         ref_probs = np.asarray(bundle['reference_probs'][feat])
-        new_counts = s_new.value_counts(normalize=True, sort=False).reindex(
-            range(len(ref_probs)), fill_value=0.0).to_numpy()
+        new_counts = (np.bincount(codes[valid].astype(int),
+                                  minlength=len(edges) - 1)
+                      / valid.sum()) if valid.any() else np.zeros(
+                          len(edges) - 1)
         psi = float(np.sum(
             (new_counts - ref_probs)
             * np.log((new_counts + 1e-4) / (ref_probs + 1e-4))))
         rows.append({'feature': feat, 'psi': round(psi, 4),
                      'verdict': psi_verdict(psi)})
-    rep = pd.DataFrame(rows).sort_values('psi', ascending=False)
-    rep.loc['TOTAL'] = ['ALL', round(rep['psi'].sum(), 4), '']
-    return rep
+    return pd.DataFrame(rows).sort_values('psi', ascending=False)
 
 
 # ============================================================================

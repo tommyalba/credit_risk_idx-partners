@@ -7,9 +7,9 @@ summaries derive from it (`cum_pd`, `median_event_time`).
 
 Outputs per learner (`lr`, `hgb`):
 
-- `reports/hazard_pd_curves_{learner}.csv` — mean cumulative PD at
+- `experiments/reports/hazard_pd_curves_{learner}.csv` — mean cumulative PD at
   6/12/24/33 months for each predicted-risk decile on OOT.
-- `reports/hazard_el_term_{learner}.csv` — monthly expected-loss term
+- `experiments/reports/hazard_el_term_{learner}.csv` — monthly expected-loss term
   structure on OOT: EAD (`loan_amnt`, USD) x LGD (0.55) x PD(t),
   cumulative and marginal, months 1-33.
 
@@ -45,7 +45,7 @@ not per-loan median timing.
 
 ## Status
 
-Unchanged from `reports/hazard_model.md`: the hazard model remains a
+Unchanged from `experiments/reports/hazard_model.md`: the hazard model remains a
 documented candidate, not a production replacement. These summaries
 are the deliverables that make that candidacy concrete — PD(t)
 curves, EL term structure, and censoring-aware timing — should a

@@ -1,7 +1,7 @@
 # Bootstrap CI for the decision threshold τ
 
 Session 4 of the robustness roadmap. Script: `experiments/tau_ci.py`;
-data: `reports/threshold_ci.csv` (500 bootstrap resamples of the
+data: `experiments/reports/threshold_ci.csv` (500 bootstrap resamples of the
 temporal validation split, C_FN = 8.25M / C_FP = 2.7M IDR).
 
 ## Question
@@ -43,7 +43,7 @@ E[C] increase vs optimum):
   (~12–14k) is ~1.2% of minimum cost.
 - **Governance implication.** τ does not need tight statistical
   control; it needs *policy* control. The binding constraint is the
-  reject-inference bias documented in `reports/reject_inference.md`
+  reject-inference bias documented in `experiments/reports/reject_inference.md`
   (funded-tuned τ likely too loose for the true applicant pool,
   oracle ≈ 0.12–0.18 under plausible assumptions) — a far larger
   effect than the ±0.05 sampling band measured here.

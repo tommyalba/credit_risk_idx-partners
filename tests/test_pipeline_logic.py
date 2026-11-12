@@ -156,3 +156,31 @@ def test_binning_bin_labels(binning_artifacts):
     X_unseen.loc[X_unseen.index[0], "purpose"] = "never_seen_category"
     labels2 = transform_bin_labels(X_unseen, binning_artifacts)
     assert labels2.loc[X_unseen.index[0], "purpose"] == "Unknown"
+
+
+# ---------------------------------------------------------------------------
+# pipeline.core.psi_report (decile-binning path used by score --psi)
+# ---------------------------------------------------------------------------
+
+def _psi_bundle():
+    edges = np.linspace(0.0, 1.0, 11).tolist()
+    return {
+        'reference_deciles': {'x': edges},
+        'reference_probs': {'x': [0.1] * 10},
+    }
+
+
+def test_psi_report_detects_shifted_feature():
+    """Regression: value_counts on Interval-indexed cuts does not align to
+    bin positions; counts must be positional or PSI silently reads ~0."""
+    from pipeline.core import psi_report
+    bundle = _psi_bundle()
+    rng = np.random.default_rng(0)
+    df_same = pd.DataFrame({'x': rng.random(2000)})
+    df_shift = pd.DataFrame({'x': np.full(2000, 0.95)})
+    rep_same = psi_report(df_same, bundle, lambda d: d, [], ['x'])
+    rep_shift = psi_report(df_shift, bundle, lambda d: d, [], ['x'])
+    psi_same = float(rep_same.loc[rep_same['feature'] == 'x', 'psi'].iloc[0])
+    psi_shift = float(rep_shift.loc[rep_shift['feature'] == 'x', 'psi'].iloc[0])
+    assert psi_same < 0.10
+    assert psi_shift > 0.25

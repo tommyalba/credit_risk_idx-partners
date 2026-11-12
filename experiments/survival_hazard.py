@@ -235,7 +235,7 @@ def main():
               f"(delta {r['auc']-b[0]:+.4f})")
 
     out = pd.DataFrame(rows)
-    out.to_csv(f'{ROOT}/reports/hazard_model_{args.learner}.csv',
+    out.to_csv(f'{ROOT}/experiments/reports/hazard_model_{args.learner}.csv',
                index=False)
 
     # calibration deciles on test (isotonic version)
@@ -246,7 +246,7 @@ def main():
         emp=('y', 'mean'), pred=('pd', 'mean'), n=('y', 'size'))
     print('\ntest calibration deciles (isotonic):')
     print(cal.round(3).to_string())
-    cal.to_csv(f'{ROOT}/reports/hazard_model_{args.learner}_deciles.csv')
+    cal.to_csv(f'{ROOT}/experiments/reports/hazard_model_{args.learner}_deciles.csv')
 
     # --- survival summaries on OOT (test) ---
     # Cohort PD(t) curves by predicted-risk decile; expected-loss term
@@ -265,7 +265,7 @@ def main():
             row[f'pd_{t}m'] = float(cum_pd(H['test'][m], t).mean())
         cohort_rows.append(row)
     cohort = pd.DataFrame(cohort_rows)
-    cohort.to_csv(f'{ROOT}/reports/hazard_pd_curves_{args.learner}.csv',
+    cohort.to_csv(f'{ROOT}/experiments/reports/hazard_pd_curves_{args.learner}.csv',
                   index=False)
 
     lgd = 0.55
@@ -282,7 +282,7 @@ def main():
                         'el_marginal_usd': el_cum - el_cum_prev})
         el_cum_prev = el_cum
     el = pd.DataFrame(el_rows)
-    el.to_csv(f'{ROOT}/reports/hazard_el_term_{args.learner}.csv',
+    el.to_csv(f'{ROOT}/experiments/reports/hazard_el_term_{args.learner}.csv',
               index=False)
 
     med_obs = float(Ts[evs.to_numpy() == 1].median()) \

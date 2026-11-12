@@ -1,15 +1,15 @@
 """Experiment: do mths_since_last_* bureau features and LR interaction terms
 add predictive value? Mirrors nb3/nb4 pipelines exactly; decision split = 'valid'.
 """
-import sys, time, warnings
-sys.path.insert(0, '/home/gontommuhammad/credit_risk_modeling')
+import sys, os, time, warnings
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 warnings.filterwarnings('ignore')
 import numpy as np
 import pandas as pd
 import joblib
 from sklearn.metrics import roc_auc_score, log_loss, brier_score_loss
 
-ROOT = '/home/gontommuhammad/credit_risk_modeling'
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RANDOM_STATE = 42
 MTHS = ['mths_since_last_delinq', 'mths_since_last_record', 'mths_since_last_major_derog']
 NEVER = 999.0  # sentinel: feature never observed on bureau record

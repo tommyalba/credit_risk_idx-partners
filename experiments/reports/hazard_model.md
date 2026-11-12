@@ -4,8 +4,8 @@ Revisit of the v2 experiment listed under Future Directions, now with
 calibration, a stronger learner option, and the canonical snapshot date.
 Script: `experiments/survival_hazard.py`
 (`python experiments/survival_hazard.py --learner {lr,hgb}`).
-Per-split metrics: `reports/hazard_model_{lr,hgb}.csv`; test decile
-calibration: `reports/hazard_model_{lr,hgb}_deciles.csv`.
+Per-split metrics: `experiments/reports/hazard_model_{lr,hgb}.csv`; test decile
+calibration: `experiments/reports/hazard_model_{lr,hgb}_deciles.csv`.
 
 ## Method
 

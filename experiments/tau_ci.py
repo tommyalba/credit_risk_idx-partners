@@ -11,7 +11,7 @@ E[C(tau)] curve each time, and reports:
   validation curve
 
 Usage: python experiments/tau_ci.py [--boot 500]
-Writes reports/threshold_ci.csv and prints a summary.
+Writes experiments/reports/threshold_ci.csv and prints a summary.
 """
 import argparse
 import sys
@@ -120,8 +120,8 @@ def main():
               f"{np.percentile(regrets,90):,.0f}", flush=True)
 
     df = pd.DataFrame(rows)
-    df.to_csv('reports/threshold_ci.csv', index=False)
-    print('\nwrote reports/threshold_ci.csv')
+    df.to_csv('experiments/reports/threshold_ci.csv', index=False)
+    print('\nwrote experiments/reports/threshold_ci.csv')
     print(df.round(4).to_string(index=False))
 
 

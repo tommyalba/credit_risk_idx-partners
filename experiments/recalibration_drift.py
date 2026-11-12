@@ -20,7 +20,7 @@ Usage:
     python experiments/recalibration_drift.py --scenario a
     python experiments/recalibration_drift.py --scenario b
 
-Writes reports/recalibration_drift_{a,b}.csv and prints a summary.
+Writes experiments/reports/recalibration_drift_{a,b}.csv and prints a summary.
 """
 import argparse
 import sys
@@ -43,7 +43,7 @@ from src.training import FIT_STRATEGIES                    # noqa: E402
 from src.utils import deserialize_data, split_train_test   # noqa: E402
 
 from pipeline.core import BASE_PARAMS, RANDOM_STATE        # noqa: E402
-from experiments.rolling_oot import (                      # noqa: E402
+from rolling_oot import (                      # noqa: E402
     SCENARIOS, MIN_TRAIN, MIN_TEST, quarter_windows,
     load_population)
 
@@ -132,7 +132,7 @@ def run_scenario(key):
               f"({rows[-1]['fit_s']}s)", flush=True)
 
     out = pd.DataFrame(rows)
-    out_path = Path('reports') / f'recalibration_drift_{cfg["stem"][-1]}.csv'
+    out_path = Path('experiments/reports') / f'recalibration_drift_{cfg["stem"][-1]}.csv'
     out.to_csv(out_path, index=False)
     print(f'\n{cfg["stem"]}: wrote {out_path} ({len(out)} windows)')
     return out

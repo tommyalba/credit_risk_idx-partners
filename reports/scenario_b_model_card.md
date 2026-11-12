@@ -58,9 +58,9 @@ from the nb1 list were never implemented and are omitted.
 
 - Calibration: raw probabilities won on validation Brier (0.1202);
   sigmoid/isotonic offered no gain — bundle stores `calibrator=None`.
-- Calibration diagnostic (`reports/calibration_slope.md`): logit slope 0.865 valid / 0.827 OOT (b<1 = mildly overconfident), ECE 0.0119/0.0184; valid-fit logit recal transfers to OOT (+~0.001 log-loss).
+- Calibration diagnostic (`experiments/reports/calibration_slope.md`): logit slope 0.865 valid / 0.827 OOT (b<1 = mildly overconfident), ECE 0.0119/0.0184; valid-fit logit recal transfers to OOT (+~0.001 log-loss).
 - Decision threshold: expected-cost τ = **0.2823** on validation
-- Threshold robustness (`reports/threshold_ci.md`): τ bootstrap 95% CI [0.238, 0.302]; cost curve flat (±0.05 costs ~2%); regret at deployed τ <0.5% mean.
+- Threshold robustness (`experiments/reports/threshold_ci.md`): τ bootstrap 95% CI [0.238, 0.302]; cost curve flat (±0.05 costs ~2%); regret at deployed τ <0.5% mean.
   (C_FN=8.25M, C_FP=2.7M); approved-book bad rate on valid = **12.9%**
   (vs 14.8% base rate).
 - vs Scenario A cat (valid 0.6468 / OOT 0.644): +0.02 AUC — expected, since

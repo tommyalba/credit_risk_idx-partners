@@ -1,9 +1,6 @@
 import pandas as pd
 import numpy as np
 import joblib
-import seaborn as sns
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 
 #===================================
 
@@ -108,6 +105,9 @@ def plot_numeric_distributions(
     filename : str, default='numeric_distributions.png'
         The name of the saved image file (can include the folder path).
     """
+
+    import seaborn as sns
+    import matplotlib.pyplot as plt
 
     # Validasi target_col
     if isinstance(target_col, str):

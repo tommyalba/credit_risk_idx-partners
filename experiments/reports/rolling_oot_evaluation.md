@@ -28,7 +28,7 @@ quarter by quarter, across the full eligible history.
 - Only CatBoost is evaluated: it won both scenarios, and XGBoost and
   LightGBM tracked within ~0.002 AUC in the fixed split.
 - Script: `experiments/rolling_oot.py`. Per-window metrics:
-  `reports/rolling_oot_a.csv`, `reports/rolling_oot_b.csv`.
+  `experiments/reports/rolling_oot_a.csv`, `experiments/reports/rolling_oot_b.csv`.
 
 ## Results
 

@@ -14,7 +14,7 @@ Usage:
     python experiments/rolling_oot.py --scenario a
     python experiments/rolling_oot.py --scenario b
 
-Writes reports/rolling_oot_{a,b}.csv and prints a summary table.
+Writes experiments/reports/rolling_oot_{a,b}.csv and prints a summary table.
 """
 import argparse
 import sys
@@ -128,7 +128,7 @@ def run_scenario(key):
               flush=True)
 
     out = pd.DataFrame(rows)
-    out_path = Path('reports') / f'rolling_oot_{cfg["stem"][-1]}.csv'
+    out_path = Path('experiments/reports') / f'rolling_oot_{cfg["stem"][-1]}.csv'
     out.to_csv(out_path, index=False)
     print(f'\n{cfg["stem"]}: wrote {out_path} '
           f'({len(out)} windows)')
