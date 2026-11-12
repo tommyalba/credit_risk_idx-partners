@@ -222,8 +222,8 @@ def fit_all_candidate_models(
     y_train_fit: pd.Series,
     X_train_fit_blsmte: Optional[pd.DataFrame] = None,
     y_train_fit_blsmte: Optional[pd.Series] = None,
-    X_train_es: pd.DataFrame = None, 
-    y_train_es: pd.Series = None
+    X_train_es: Optional[pd.DataFrame] = None, 
+    y_train_es: Optional[pd.Series] = None
 ) -> Dict[str, Any]:
     """
     Iterates through the model registry and fits all candidates using appropriate datasets.
@@ -279,15 +279,7 @@ def fit_all_candidate_models(
 # MODEL SERIALIZATION UTILITIES
 # ============================================================
 def save_best_model(model_obj: Any, filepath: str) -> None:
-    """
-    Save ML model objects to disk using joblib.
-    
-    Args:
-        model_obj (Any): The fit estimator object.
-        filepath (str): Full storage path location (including .pkl or .joblib).
-    """
-    import joblib
-    # Memastikan direktori tujuan tersedia
+    """Save ML model objects to disk using joblib."""
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     joblib.dump(model_obj, filepath)
 
@@ -299,7 +291,7 @@ def select_stage_a_winner(
     leaderboard_df: pd.DataFrame,
     fitted_models: Dict[str, Any],
     manual_winner: Optional[str] = None
-) -> Tuple[str, Any, pd.Series]:
+) -> Tuple[str, Any, pd.DataFrame]:
     """
     Select the best model from Stage A based on performance on validation data, 
     or use a manually selected model.
@@ -314,22 +306,15 @@ def select_stage_a_winner(
         manual_winner (Optional[str]): Model name if you want to override automatic selection.
 
     Returns:
-        Tuple[str, Any, pd.Series]: 
+        Tuple[str, Any, pd.DataFrame]: 
             - Name of the winning model.
             - Winning model object.
-            - The performance metrics row of the model in the validation set.
+            - Performance metrics DataFrame for the model across splits.
     """
     if manual_winner is not None:
         if manual_winner not in fitted_models:
             raise ValueError(f"Manual winner '{manual_winner}' not found in model dictionary.")
         winner_name = manual_winner
-        
-        # Extract validation metric rows for manual models
-        valid_metrics = leaderboard_df[
-            (leaderboard_df['split'] == '2_valid') & 
-            (leaderboard_df['model_name'] == winner_name)
-        ].iloc[0]
-        
     else:
         # Filter only data validation
         valid_df = leaderboard_df[leaderboard_df['split'] == '2_valid'].copy()

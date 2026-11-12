@@ -6,29 +6,15 @@ import joblib
 
 # Import Data while Handling Duplicate
 def importData(data_path):
-    # Read file
     dataframe = pd.read_csv(data_path)
-    print(f"Origin Data Shape: {dataframe.shape} - (# Observation, # Column)")
-
-    # Calculate the sum of duplicate data
-    data_duplicates = dataframe.duplicated().sum()
-    print(f"\n...handling duplicate data:")
-    print(f"Sum of duplicate data: {data_duplicates}")
-    
-    # Get duplicated rows
-    duplicated_rows = dataframe[dataframe.duplicated(keep=False)]
-    print(f"Shape of duplicated rows: {duplicated_rows.shape}")
-    
-    # Print shape of DataFrame before dropping duplicates
-    print(f"\nBefore drop rows: {dataframe.shape}")
-    
-    # Drop duplicates, keeping the first occurrence
+    n_before = len(dataframe)
     dataframe = dataframe.drop_duplicates(keep='first')
-    
-    # Print shape of DataFrame after dropping duplicates
-    print(f"After drop rows: {dataframe.shape}")
-
+    n_after = len(dataframe)
+    print(f"Origin Data Shape: ({n_before}, {dataframe.shape[1]}) - (# Observation, # Column)")
+    print(f"Duplicates dropped: {n_before - n_after}; Final shape: {dataframe.shape}")
     return dataframe
+
+import_data = importData
 
 
 # Function to serialize data
@@ -66,24 +52,18 @@ def deserialize_data(path: str):
 # Summary of Missing Values
 def missing_summary(dataframe):
     """
-    Creates a summary of missing values ​​for each column in a DataFrame.
-    
-    Parameters:
-        df (pd.DataFrame): The DataFrame to be examined.
-    
-    Returns:
-        pd.DataFrame: Summary of the number and percentage of missing values.
+    Creates a summary of missing values for each column in a DataFrame.
     """
-    na_counts = dataframe.isna().sum()[dataframe.isna().sum() > 0]
-    na_percentage = dataframe.isna().sum()[dataframe.isna().sum() > 0] / len(dataframe) * 100
-    
-    summary = pd.DataFrame({
+    na_counts = dataframe.isna().sum()
+    na_counts = na_counts[na_counts > 0]
+    total_len = len(dataframe)
+    na_percentage = (na_counts / total_len * 100) if total_len > 0 else 0.0
+
+    return pd.DataFrame({
         'Missing Values': na_counts,
         'Percentage': na_percentage.round(2),
-        'Total length': len(dataframe)
+        'Total length': total_len
     })
-    
-    return summary
 
 # Function to Plot Numeric Distribution
 def plot_numeric_distributions(
@@ -191,7 +171,8 @@ def calculate_all_iv(dataframe, target_col, num_bins=6):
         raise TypeError("`target_col` must be a String (column name) or Pandas Series / NumPy Array.")
         
     # Fetch all numeric columns except the target column itself.
-    numeric_cols = dataframe.select_dtypes(include=[np.number]).columns
+    target_name = target_col if isinstance(target_col, str) else getattr(y_series, 'name', None)
+    numeric_cols = [c for c in X_dataframe.select_dtypes(include=[np.number]).columns if c != target_name]
     
     total_good = (y_series == 0).sum()
     total_bad = (y_series == 1).sum()
@@ -226,8 +207,8 @@ def calculate_all_iv(dataframe, target_col, num_bins=6):
             # Total IV for this feature
             iv_results[col] = aggr['IV'].sum()
             
-        except Exception as e:
-            # Skip if column has too little value variation to qcut
+        except (ValueError, KeyError):
+            # Skip if column has too little value variation to qcut or zero denominator
             continue
             
     # Convert the results to a DataFrame and sort by highest IV
@@ -322,12 +303,12 @@ def split_train_test(X, y, test_size, stratify, seed):
     y_test -- Testing set of output target
     """
     from sklearn.model_selection import train_test_split
-    # Split the data into training and testing sets
+    stratify_target = y if stratify is True else (stratify if stratify is not False else None)
     X_train, X_test, y_train, y_test = train_test_split(
         X, 
         y,
         test_size=test_size,
-        stratify=stratify,
+        stratify=stratify_target,
         random_state=seed
     )
     # Return the split data

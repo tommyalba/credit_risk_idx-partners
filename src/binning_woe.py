@@ -130,8 +130,6 @@ import numpy as np
 import pandas as pd
 from optbinning import BinningProcess
 
-np.random.seed(42)
-
 # ============================================================================
 # 1. Feature routing
 # ============================================================================
@@ -208,18 +206,20 @@ def add_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     out['credit_age_years'] = credit_history_age_month / 12
     out['emp_length_ordinal'] = out['emp_length'].apply(extract_emp_length_years)
 
+    derog_cols = ['collections_12_mths_ex_med', 'delinq_2yrs', 'pub_rec']
     condition = (
         (out['collections_12_mths_ex_med'] > 0) | 
         (out['delinq_2yrs'] > 0) | 
         (out['pub_rec'] > 0)
     )
-    
-    out['has_derogatory'] = np.where(condition, 1, 0)
-    out['has_derogatory'] = out['has_derogatory'].apply(
-        lambda v: 'Unknown' if pd.isna(v) else ('No_Derogatory' if v == 0 else 'Has_Derogatory')
-    ).astype('category')
+    all_missing = out[derog_cols].isna().all(axis=1)
+    has_derog = np.where(
+        all_missing, 'Unknown',
+        np.where(condition, 'Has_Derogatory', 'No_Derogatory')
+    )
+    out['has_derogatory'] = pd.Series(has_derog, index=out.index, dtype='category')
 
-    out['loan_to_income'] = out['loan_amnt'] / out['annual_inc']
+    out['loan_to_income'] = out['loan_amnt'] / out['annual_inc'].replace(0, np.nan)
     out['open_acc_ratio'] = out['open_acc'] / out['total_acc'].replace(0, np.nan)  # avoid div/0
 
     out['term'] = out['term'].replace(
@@ -263,36 +263,37 @@ def fit_binning(X_train: pd.DataFrame, target_col: str = 'target') -> BinningArt
 
     binning_artifacts = BinningArtifacts(process=process)
 
-    print("\n" + "="*50)
-    print("RUNNING SPECIAL/MISSING CONSISTENCY AUDIT")
-    print("="*50)
-    
-    try:
-        from IPython.display import display as _display
-    except ImportError:
-        _display = print
+    # Pre-transform once across all features to avoid O(N*M) redundant transforms in the audit loop
+    X_eval = X_train.copy()
+    for col in ALGORITHMIC_NUMERICAL:
+        if col in X_eval.columns:
+            X_eval[col] = X_eval[col].astype(float)
+
+    transformed_all = process.transform(
+        X_eval[ALGORITHMIC_FEATURES],
+        metric="woe",
+        metric_missing="empirical",
+        metric_special="empirical",
+    )
+    bins_all = process.transform(
+        X_eval[ALGORITHMIC_FEATURES],
+        metric="bins",
+    )
 
     for feature in ALGORITHMIC_FEATURES:
         audit = check_special_missing_consistency(
             binning_artifacts=binning_artifacts,
             X=X_train,
-            feature=feature
+            feature=feature,
+            transformed=transformed_all,
+            bins=bins_all,
         )
-        
-        # Cetak log untuk visibilitas
-        _display(audit.set_index('Feature'))
-        
-        # Evaluasi asersi (jika tabel tidak kosong)
         if not audit.empty:
             assert audit["Consistent"].all(), (
                 f"FATAL INCONSISTENCY DETECTED in feature '{feature}'! "
-                "The WoE value in the transformation table does not match the binning_table. "
-                "Check for data type or value leaks."
+                "The WoE value in the transformation table does not match the binning_table."
             )
-            
-    print("\nAUDIT PASSED: All Special & Missing mappings are proven to be consistent.")
-    print("="*62 + "\n")
-    
+
     return binning_artifacts
 
 
@@ -329,11 +330,9 @@ def format_numeric_bin(bin_str: str) -> str:
     # Example: 0.19 -> "0p19" or "0_19" to be safe for column/feature naming
     def fmt(val_str: float) -> str:
         val = float(val_str)
-        # If the original is an integer (e.g. 1.0 or 2), remove the .0
         if val.is_integer():
             return str(int(val))
-        # If decimal, replace the dot with the letter 'p' (dot) or '_'
-        return str(val).replace('.', '.')
+        return str(val).replace('.', 'p')
     
     if bin_str.strip().startswith('(-inf'):
         return f"less_{fmt(nums[-1])}"
@@ -581,63 +580,33 @@ def check_special_missing_consistency(
     X: pd.DataFrame,
     feature: str,
     atol: float = 1e-10,
+    transformed: Optional[pd.DataFrame] = None,
+    bins: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
     """
     Audit consistency between Special/Missing WoE shown in the binning table
     and the WoE actually produced by transform(metric='woe').
-
-    Parameters
-    ----------
-    binning_artifacts : BinningArtifacts
-        Output of fit_binning().
-    X : pd.DataFrame
-        Dataset containing the feature to audit.
-    feature : str
-        Feature name.
-    atol : float
-        Numerical tolerance.
-
-    Returns
-    -------
-    pd.DataFrame
-        One row for each of {"Special", "Missing"}.
-
-        Columns
-        -------
-        Bin
-            "Special" or "Missing"
-        Table WoE
-            WoE reported by binning_table.build()
-        Transform WoE
-            Actual WoE produced by transform().
-        Count
-            Number of observations falling into that bin.
-        Consistent
-            True if both values match within tolerance.
     """
-    # 1. Pipeline prep
-    X_eval = X.copy()
-    
-    # [LOCKED]: Force numeric to float so that C-engine optbinning doesn't mistake pure NaNs for "Special" (WoE 0.0)
-    for col in ALGORITHMIC_NUMERICAL:
-        if col in X_eval.columns:
-            X_eval[col] = X_eval[col].astype(float)
-            
     process = binning_artifacts.process
 
-    # 2. Transform simultaneously
-    transformed = process.transform(
-        X_eval[ALGORITHMIC_FEATURES],
-        metric="woe",
-        metric_missing="empirical",
-        metric_special="empirical",
-    )
+    if transformed is None or bins is None:
+        X_eval = X.copy()
+        for col in ALGORITHMIC_NUMERICAL:
+            if col in X_eval.columns:
+                X_eval[col] = X_eval[col].astype(float)
 
-    # obtain bin labels
-    bins = process.transform(
-        X_eval[ALGORITHMIC_FEATURES],
-        metric="bins",
-    )
+        if transformed is None:
+            transformed = process.transform(
+                X_eval[ALGORITHMIC_FEATURES],
+                metric="woe",
+                metric_missing="empirical",
+                metric_special="empirical",
+            )
+        if bins is None:
+            bins = process.transform(
+                X_eval[ALGORITHMIC_FEATURES],
+                metric="bins",
+            )
 
     table = binning_table(binning_artifacts, feature)
     rows = []

@@ -1,5 +1,5 @@
 """
-stability.py
+population_stability_index.py
 
 Population Stability Index (PSI) utilities for the credit risk pipeline.
 
@@ -57,7 +57,15 @@ def calculate_psi(expected: pd.Series, actual: pd.Series) -> pd.DataFrame:
     exp_dist = expected.value_counts(normalize=True)
     act_dist = actual.value_counts(normalize=True)
 
-    all_bins = sorted(set(exp_dist.index) | set(act_dist.index), key=str)
+    if isinstance(expected.dtype, pd.CategoricalDtype):
+        known = list(expected.cat.categories)
+        extra = [b for b in act_dist.index if b not in expected.cat.categories]
+        all_bins = known + extra
+    else:
+        try:
+            all_bins = sorted(set(exp_dist.index) | set(act_dist.index))
+        except TypeError:
+            all_bins = sorted(set(exp_dist.index) | set(act_dist.index), key=str)
     exp_pct = exp_dist.reindex(all_bins, fill_value=0).clip(lower=eps)
     act_pct = act_dist.reindex(all_bins, fill_value=0).clip(lower=eps)
 

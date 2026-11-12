@@ -3,18 +3,7 @@ import pandas as pd
 import numpy as np
 import shap
 from scipy.stats import spearmanr
-
-# Viz libraries
-import seaborn as sns
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-
-# Display all columns of data
-pd.set_option("display.max_columns", None)
-
-# Plotting options
-mpl.style.use('ggplot')
-sns.set(style='whitegrid')
 
 """
 Implementasi Interpretabilitas SHAP (SHapley Additive exPlanations)
@@ -143,7 +132,8 @@ def plot_global_importance(explanation, max_display=None, plot_type="dot"):
         "dot"  -- sebaran per-observasi (paling informatif, default)
         "bar"  -- rata-rata |SHAP| saja (lebih ringkas untuk laporan eksekutif)
     """
-    fig = plt.figure(figsize=(9, max(5, max_display * 0.35)))
+    display_count = max_display if max_display is not None else 20
+    fig = plt.figure(figsize=(9, max(5, display_count * 0.35)))
     shap.summary_plot(
         explanation, max_display=max_display, plot_type=plot_type, show=False
     )
@@ -359,61 +349,3 @@ def plot_individual_force(explanation, index):
         explanation.data[index],
         feature_names=explanation.feature_names,
     )
-
-# ===========================================================================
-# Running SHAP Interpretation...
-# ===========================================================================
-if __name__ == "__main__":
-
-    explanation = compute_shap_values(shap_base_model, X_valid_clean)
-    
-    # 1. Axiomatic validation (MUST be run once as a sanity check)
-    axiom_check = validate_efficiency_axiom(explanation, shap_base_model, X_valid_clean)
-    print(f"n=== SHAP AXIOM CHECK ===")
-    display(axiom_check)
-    
-    # 2. Global diagnostics
-    fig1 = plot_global_importance(explanation, max_display=15)
-    fig1.savefig("shap_summary_global.png", dpi=150, bbox_inches="tight")
-    plt.show()
-    
-    importance_table = get_global_importance_table(
-        explanation, X_valid_clean.columns.tolist()
-    )
-    print(f"\n=== SHAP GLOBAL IMPORTANCE (TOP 12) ===")
-    display(importance_table.head(12))
-    
-    comparison_gain = compare_shap_vs_gain_importance(
-        explanation, shap_base_model, X_valid_clean.columns.tolist()
-    )
-    print(f"\n=== SHAP vs GAIN IMPORTANCE COMPARISON ===")
-    print(comparison_gain['interpretation'])
-    print(comparison_gain['comparison_table'][['feature','rank_shap','rank_gain']].head(15))
-    
-    # 3. Relational diagnostics -- example for debt-to-income ratio feature
-    fig2 = plot_dependence(explanation, 'dti')  # debt_to_income_ratio
-    plt.show()
-    # fig2.savefig("shap_dependence_dti.png", dpi=150, bbox_inches="tight")
-    mono_check = check_monotonicity(
-        explanation, 'dti', expected_direction='increasing'
-    )
-    print()
-    print(mono_check['interpretation'])
-    print()
-    
-    # 4. Local explanation -- example for the observation with the highest risk score
-    proba_valid_arr = np.asarray(proba_valid_winner)
-    highest_risk_idx = int(np.argmax(proba_valid_arr))
-    
-    local_explanation = explain_individual_prediction(
-        explanation, highest_risk_idx, top_n=12
-    )
-    print(f"\n=== LOCAL EXPLANATION | Highest risk observation (idx={highest_risk_idx}) ===")
-    display(local_explanation["table"])
-    print(f"Final probability: {local_explanation['final_probability']:.4f}")
-    print(f"Decision (tau=0.2286): {'REJECT (BAD)' if local_explanation['final_probability'] >= winner_threshold else 'APPROVE (GOOD)'}")
-    
-    fig3 = plot_individual_waterfall(explanation, highest_risk_idx)
-    plt.show()
-    # fig3.savefig("shap_waterfall_individual.png", dpi=150, bbox_inches="tight")
-    pass

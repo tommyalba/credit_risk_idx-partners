@@ -1,24 +1,11 @@
 # Libraries
 import pandas as pd
 import numpy as np
-
-# Module
 import copy
-
-# Viz libraries
-import seaborn as sns
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 # roc curve from sci-kit learn
 from sklearn.metrics import roc_curve
-
-# Display all columns of data
-pd.set_option("display.max_columns", None)
-
-# Plotting options
-mpl.style.use('ggplot')
-sns.set(style='whitegrid')
 
 """
 Implementasi Fungsi Expected Cost untuk Penentuan Ambang Keputusan Optimal-Biaya
@@ -143,28 +130,22 @@ def expected_cost_curve_scalar(y_true, y_proba, c_fn, c_fp, n_thresholds=1000):
     p0 = 1 - p1                 # P(y=0)
 
     thresholds = np.linspace(0.0, 1.0, n_thresholds)
-    expected_costs = np.empty_like(thresholds)
-    fnr_arr = np.empty_like(thresholds)
-    fpr_arr = np.empty_like(thresholds)
 
     y_bad = (y_true == 1)
     y_good = (y_true == 0)
-    n_bad = y_bad.sum()
-    n_good = y_good.sum()
+    n_bad = int(y_bad.sum())
+    n_good = int(y_good.sum())
 
-    for i, tau in enumerate(thresholds):
-        y_pred = (y_proba >= tau).astype(int)
+    bad_scores = np.sort(y_proba[y_bad])
+    good_scores = np.sort(y_proba[y_good])
 
-        fn = np.sum((y_pred == 0) & y_bad)
-        fp = np.sum((y_pred == 1) & y_good)
+    fn_arr = np.searchsorted(bad_scores, thresholds, side='left')
+    fp_arr = n_good - np.searchsorted(good_scores, thresholds, side='left')
 
-        fnr = fn / n_bad if n_bad > 0 else 0.0   # = 1 - Recall_BAD(tau)
-        fpr = fp / n_good if n_good > 0 else 0.0  # = FPR(tau)
+    fnr_arr = fn_arr / n_bad if n_bad > 0 else np.zeros_like(thresholds, dtype=float)
+    fpr_arr = fp_arr / n_good if n_good > 0 else np.zeros_like(thresholds, dtype=float)
 
-        expected_costs[i] = c_fn * p1 * fnr + c_fp * p0 * fpr
-        fnr_arr[i] = fnr
-        fpr_arr[i] = fpr
-
+    expected_costs = c_fn * p1 * fnr_arr + c_fp * p0 * fpr_arr
     optimal_idx = np.argmin(expected_costs)
 
     return {
@@ -214,20 +195,28 @@ def expected_cost_curve_per_observation(
 
     n = len(y_true)
     thresholds = np.linspace(0.0, 1.0, n_thresholds)
-    expected_costs = np.empty_like(thresholds)
 
     y_bad = (y_true == 1)
     y_good = (y_true == 0)
 
-    for i, tau in enumerate(thresholds):
-        y_pred = (y_proba >= tau).astype(int)
+    # Sort bad and good loans by probability to compute threshold costs via searchsorted
+    order_bad = np.argsort(y_proba[y_bad])
+    bad_scores = y_proba[y_bad][order_bad]
+    bad_costs_cum = np.concatenate([[0.0], np.cumsum(c_fn_array[y_bad][order_bad])])
 
-        fn_mask = (y_pred == 0) & y_bad
-        fp_mask = (y_pred == 1) & y_good
+    order_good = np.argsort(y_proba[y_good])
+    good_scores = y_proba[y_good][order_good]
+    good_costs = c_fp_array[y_good][order_good]
+    good_costs_cum = np.concatenate([[0.0], np.cumsum(good_costs)])
+    total_good_cost = good_costs_cum[-1] if len(good_costs_cum) > 0 else 0.0
 
-        total_cost = c_fn_array[fn_mask].sum() + c_fp_array[fp_mask].sum()
-        expected_costs[i] = total_cost / n
+    idx_bad = np.searchsorted(bad_scores, thresholds, side='left')
+    idx_good = np.searchsorted(good_scores, thresholds, side='left')
 
+    fn_costs = bad_costs_cum[idx_bad]
+    fp_costs = total_good_cost - good_costs_cum[idx_good]
+
+    expected_costs = (fn_costs + fp_costs) / n if n > 0 else np.zeros_like(thresholds)
     optimal_idx = np.argmin(expected_costs)
 
     return {
@@ -316,72 +305,3 @@ def plot_expected_cost_curve(cost_result, dataset_name='train_cal', ax=None):
     ax.legend(loc='upper center', fontsize=9)
     ax.grid(alpha=0.25)
     return ax
-
-
-# ===========================================================================
-# 6. RUNNING EXPECTED COST FUNCTION
-# ===========================================================================
-if __name__ == "__main__":
-    # --- Scalar mode: portfolio mean estimate ---
-    # Misal: EAD rata-rata Rp 15.000.000, LGD historis 55%,
-    # For example: Average EAD Rp. 15,000,000, historical LGD 55%,
-    # interest spread 9%/year, average loan duration 2 years.
-    components = estimate_cost_components(
-        ead=15_000_000,
-        lgd=0.55,
-        interest_spread=0.09,
-        loan_duration_years=2.0,
-    )
-    def print_cost_report(components):
-        print("Estimasi Komponen Biaya")
-        print("-----------------------")
-        print(f"C_FN (kerugian default) : {components['C_FN']:.4f}")
-        print(f"C_FP (opportunity cost) : {components['C_FP']:.4f}")
-        print(f"Rasio C_FN/C_FP         : {components['ratio_CFN_CFP']:.4f}")
-
-    print_cost_report(components)
-    # C_FN = 15jt * 0.55 = 8.25jt
-    # C_FP = 15jt * 0.09 * 2 = 2.7jt
-    # rasio C_FN/C_FP ≈ 3.06
-
-    cost_result_winner = expected_cost_curve_scalar(
-        y_train_cal, proba_train_cal_winner,
-        c_fn=components["C_FN"], c_fp=components["C_FP"]
-    )
-    print(f"\nTau optimal-biaya : {cost_result_winner['optimal_threshold']:.4f}")
-    print(f"Recall BAD di tau optimal-biaya : {cost_result_winner['optimal_recall_bad']:.4f}\n")
-    
-    comparison = compare_threshold_criteria(
-        y_train_cal, proba_train_cal_winner, components["C_FN"], components["C_FP"]
-    )
-    print(f"Perbandingan Ambang Threshold")
-    print(f"-----------------------------")
-    print(f"Tau optimal-biaya : {comparison['tau_expected_cost']:.4f}")
-    print(f"Tau Youden's J    : {comparison['tau_youden_j']:.4f}")
-    print(f"Tau F1 maksimal   : {comparison['tau_f1_maximal']:.4f}")
-    print(f"Rasio C_FN/C_FP   : {comparison['cost_ratio_CFN_CFP']:.2f}")
-    print(f"\nInterpretasi: {comparison['interpretasi']}\n")
-
-    # Ambil threshold_opt untuk objective 'f1'
-    f1_row = next(row for row in stage2_rows if row['threshold_objective'] == 'f1')
-    youden_row = next(row for row in stage2_rows if row['threshold_objective'] == 'youden')
-    f1_threshold_opt = f1_row['threshold_opt']
-    ydn_threshold_opt = youden_row['threshold_opt']
-    
-    ax_cost = plot_expected_cost_curve(cost_result_winner, dataset_name="train_cal")
-    # Add vertical markers for F1/Youden (which are identical)
-    ax_cost.axvline(
-        f1_threshold_opt, 
-        color='black', linestyle='-', linewidth=1.5,
-        label=f"F1 threshold = {f1_threshold_opt:.6f}"
-    )
-    ax_cost.axvline(
-        ydn_threshold_opt,
-        color='red', linestyle='--', linewidth=1.5,
-        label=f"Youden threshold = {ydn_threshold_opt:.6f}"
-    )
-    ax_cost.legend(fontsize=8)
-    plt.tight_layout()
-    # plt.savefig("expected_cost_curve_valid.png", dpi=150)
-    plt.show()
-    pass

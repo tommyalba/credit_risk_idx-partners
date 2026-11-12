@@ -3,14 +3,11 @@ import numpy as np
 import pandas as pd
 from typing import Dict
 from sklearn.metrics import (
-    precision_score, recall_score, f1_score, matthews_corrcoef,
-    classification_report, confusion_matrix, balanced_accuracy_score,
+    classification_report, confusion_matrix,
     roc_auc_score, average_precision_score, log_loss, brier_score_loss,
 )
 
-# ==========================================
-# 1. CORE METRIC CALCULATOR (Pure Function)
-# ==========================================
+from src.ks_statistic_evaluation import compute_ks_statistic
 
 def calculate_probability_metrics(y_true: pd.Series, y_proba: np.ndarray) -> Dict[str, float]:
     """
@@ -29,8 +26,6 @@ def calculate_probability_metrics(y_true: pd.Series, y_proba: np.ndarray) -> Dic
     brier = float(brier_score_loss(y_true, y_proba))
     gini = 2.0 * roc_auc - 1.0
     
-    # Extract KS statistics using internal helper
-    from src.ks_statistic_evaluation import compute_ks_statistic
     ks_result = compute_ks_statistic(y_true, y_proba)
     ks_stat = float(ks_result['ks_statistic_roc'])
     
@@ -63,19 +58,30 @@ def threshold_classification_metrics(y_true, y_proba, threshold):
     y_pred = (y_proba >= threshold).astype(int)
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
 
+    precision_bad = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+    recall_bad = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+    f1_bad = (2.0 * precision_bad * recall_bad / (precision_bad + recall_bad)) if (precision_bad + recall_bad) > 0 else 0.0
+
     specificity = tn / (tn + fp) if (tn + fp) > 0 else np.nan
     npv = tn / (tn + fn) if (tn + fn) > 0 else np.nan
     fpr = fp / (fp + tn) if (fp + tn) > 0 else np.nan
     fnr = fn / (fn + tp) if (fn + tp) > 0 else np.nan
 
-    predicted_bad_rate = y_pred.mean()
+    spec_val = specificity if not np.isnan(specificity) else 0.0
+    balanced_acc = 0.5 * (recall_bad + spec_val)
+
+    mcc_denom = float((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+    mcc = (float(tp * tn - fp * fn) / np.sqrt(mcc_denom)) if mcc_denom > 0 else 0.0
+
+    total_obs = tn + fp + fn + tp
+    predicted_bad_rate = float(tp + fp) / total_obs if total_obs > 0 else 0.0
 
     return {
-        'Balanced_Accuracy': balanced_accuracy_score(y_true, y_pred),
-        'MCC': matthews_corrcoef(y_true, y_pred),
-        'Precision_Bad': precision_score(y_true, y_pred, pos_label=1, zero_division=0),
-        'Recall_Bad': recall_score(y_true, y_pred, pos_label=1, zero_division=0),
-        'F1_Bad': f1_score(y_true, y_pred, pos_label=1, zero_division=0),
+        'Balanced_Accuracy': balanced_acc,
+        'MCC': mcc,
+        'Precision_Bad': precision_bad,
+        'Recall_Bad': recall_bad,
+        'F1_Bad': f1_bad,
         'Specificity': specificity,
         'NPV': npv,
         'FPR': fpr,

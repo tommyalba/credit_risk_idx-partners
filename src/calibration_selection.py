@@ -32,14 +32,14 @@ def evaluate_calibration_strategies(
     proba_store: Dict[str, Dict[str, np.ndarray]],
     y_by_split: Dict[str, pd.Series],
     base_model_names: List[str],
-    decision_split: str = "test",
+    decision_split: str = "valid",
 ) -> CalibrationEvaluation:
     """
     Score every (model, calibration strategy) combination in `proba_store`
     on Brier Score and LogLoss across all splits, and pick the winner per
-    base model using ONLY the `decision_split` (the OOT test set -- never
+    base model using ONLY the `decision_split` (the validation set -- never
     'train_cal', since that split was used to FIT the calibrators and
-    would give an optimistically biased comparison).
+    would give an optimistically biased comparison; OOT test is held out).
 
     Parameters
     ----------

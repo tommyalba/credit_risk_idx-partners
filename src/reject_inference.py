@@ -25,28 +25,41 @@ Reject payloads must satisfy the Scenario-A application-time contract:
 `SCENARIO_A_FEATURE_COLUMNS` present, `FORBIDDEN_FEATURES` absent.
 """
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
-from pipeline.scenario_a.features import (
-    FORBIDDEN_FEATURES,
-    SCENARIO_A_FEATURE_COLUMNS,
-    add_scenario_a_features,
-)
+
+def _default_scenario_a_contracts():
+    from pipeline.scenario_a.features import (
+        FORBIDDEN_FEATURES,
+        SCENARIO_A_FEATURE_COLUMNS,
+        add_scenario_a_features,
+    )
+    return SCENARIO_A_FEATURE_COLUMNS, FORBIDDEN_FEATURES, add_scenario_a_features
 
 
-def load_rejects(path, label_col: Optional[str] = None) -> pd.DataFrame:
-    """Read a rejects file (CSV/parquet) and validate the A-time contract."""
+def load_rejects(
+    path,
+    label_col: Optional[str] = None,
+    feature_columns: Optional[List[str]] = None,
+    forbidden_features: Optional[List[str]] = None,
+) -> pd.DataFrame:
+    """Read a rejects file (CSV/parquet) and validate the application contract."""
     path = Path(path)
     df = (pd.read_parquet(path) if path.suffix == '.parquet'
           else pd.read_csv(path))
 
-    missing = [c for c in SCENARIO_A_FEATURE_COLUMNS if c not in df.columns]
+    if feature_columns is None or forbidden_features is None:
+        def_features, def_forbidden, _ = _default_scenario_a_contracts()
+        feature_columns = feature_columns or def_features
+        forbidden_features = forbidden_features or def_forbidden
+
+    missing = [c for c in feature_columns if c not in df.columns]
     if missing:
         raise ValueError(f'rejects file missing application columns: {missing}')
-    present_forbidden = [c for c in FORBIDDEN_FEATURES if c in df.columns]
+    present_forbidden = [c for c in forbidden_features if c in df.columns]
     if present_forbidden:
         raise ValueError(
             f'rejects file contains post-origination columns: '
@@ -77,6 +90,7 @@ def build_augmented_dataset(
     label_col: Optional[str] = None,
     reject_pd: Optional[np.ndarray] = None,
     reject_weight: float = 1.0,
+    feature_fn: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = None,
 ) -> Tuple[pd.DataFrame, pd.Series, np.ndarray]:
     """Combine funded rows with rejects into one training frame.
 
@@ -92,6 +106,7 @@ def build_augmented_dataset(
     reject_weight : sample-weight multiplier applied to every reject.
         Values < 1 down-weight the unverified reject population relative
         to funded loans with known outcomes.
+    feature_fn : feature derivation function. Defaults to add_scenario_a_features.
 
     Returns
     -------
@@ -101,14 +116,17 @@ def build_augmented_dataset(
     if (label_col is None) == (reject_pd is None):
         raise ValueError('provide exactly one of label_col or reject_pd')
 
-    X_f = add_scenario_a_features(X_funded_raw)
-    X_r = add_scenario_a_features(X_rejects_raw)
+    if feature_fn is None:
+        _, _, feature_fn = _default_scenario_a_contracts()
+
+    X_f = feature_fn(X_funded_raw)
+    X_r = feature_fn(X_rejects_raw)
 
     # Align reject features to the funded frame: same columns, same
     # categorical levels (CatBoost trains on category indices).
     X_r = X_r.reindex(columns=X_f.columns)
     for col in X_f.columns:
-        if str(X_f[col].dtype) == 'category':
+        if isinstance(X_f[col].dtype, pd.CategoricalDtype):
             X_r[col] = pd.Categorical(
                 X_r[col], categories=X_f[col].cat.categories)
 
