@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 from src.population_stability_index import calculate_psi, psi_verdict, psi_report
-from src.calibration_selection import brier_skill_score, reliability_table
+from src.calibration import brier_skill_score, reliability_table
 from src.calibration import (
     CALIBRATION_STRATEGIES,
     calibration_slope_intercept,

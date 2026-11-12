@@ -54,7 +54,7 @@ new scenarios should extend the spec, not copy core.
 | `binning_woe.py` | WoE binning + derived features; feeds the nb3 scorecard and autoresearch configs |
 | `training.py` | estimator construction (`build_estimator`), fit strategies |
 | `metrics.py`, `evaluation.py`, `ks_statistic_evaluation.py` | AUC, KS, log-loss, Brier |
-| `calibration.py`, `calibration_selection.py` | raw vs sigmoid vs isotonic, chosen on validation Brier |
+|  `calibration.py` | raw vs sigmoid vs isotonic, chosen on validation Brier |
 | `expected_cost_threshold.py` | E[C(τ)] curve, argmin, and comparison against Youden/F1 optima |
 | `thresholding.py` | generic threshold utilities used by the cost module |
 | `population_stability_index.py` | PSI for drift monitoring |
