@@ -26,9 +26,6 @@ Industry interpretation convention (Siddiqi, 2017, Credit Risk Scorecards):
     > 40%      : Strong discrimination
 """
 
-# ==========================================
-# COMPUTE KS STATISTICS
-# ==========================================
 def compute_ks_statistic(y_true, y_proba):
     """
     Calculate the KS statistic using two mutually verifying approaches:
@@ -87,9 +84,6 @@ def compute_ks_statistic(y_true, y_proba):
         'thresholds': thresholds,
     }
 
-# ==========================================
-# INTERPRET KS
-# ==========================================
 def interpret_ks(ks_value):
     """Conventional interpretation of KS value according 
     to credit scoring industry conventions."""
@@ -101,9 +95,6 @@ def interpret_ks(ks_value):
     else:
         return "strong"
 
-# ==========================================
-# KS REPORT TABLE
-# ==========================================
 def ks_report_table(datasets: dict):
     """
     Build compact KS tables for multi-partition, 
@@ -129,7 +120,7 @@ def ks_report_table(datasets: dict):
             'KS Statistic': round(result['ks_statistic_roc'], 4),
             'KS (%)': round(result['ks_statistic_roc'] * 100, 2),
             'KS Threshold': round(result['ks_threshold'], 4),
-            'Interpretasi': interpret_ks(result['ks_statistic_roc']),
+            'Interpretation': interpret_ks(result['ks_statistic_roc']),
         })
         diff = abs(result['ks_statistic_roc'] - result['ks_statistic_2samp'])
         if diff >= 1e-3:
@@ -140,22 +131,22 @@ def ks_report_table(datasets: dict):
     return pd.DataFrame(rows)
 def plot_ks_curve(y_true, y_proba, dataset_name="Validation", ax=None):
     """
-    Memvisualisasikan dua kurva CDF kumulatif (GOOD vs BAD) terhadap skor
-    probabilitas, dengan penanda eksplisit pada titik pemisahan maksimum (KS).
+    Plot the two cumulative CDF curves (GOOD vs BAD) against the
+    probability score, with a marker at the point of maximum separation (KS).
 
-    Ini adalah representasi konvensional industri credit scoring, lebih
-    intuitif bagi pemangku kepentingan non-teknis dibanding kurva ROC,
-    karena secara visual langsung menunjukkan skor di mana kedua populasi
-    paling terpisah.
+    This is the conventional credit-scoring-industry representation:
+    more intuitive for non-technical stakeholders than the ROC curve,
+    because it visually shows the score where the two populations
+    separate the most.
     """
     y_true = np.asarray(y_true)
     y_proba = np.asarray(y_proba)
 
     result = compute_ks_statistic(y_true, y_proba)
 
-    # Bangun CDF kumulatif terhadap skor terurut, dipetakan ke thresholds ROC
-    # tpr = F_BAD(tau) secara definisi (TPR = proporsi BAD dengan skor >= tau,
-    # diukur dari kanan; untuk CDF dari kiri gunakan 1 - tpr dan 1 - fpr)
+    # Build cumulative CDFs against sorted scores mapped to ROC thresholds.
+    # tpr = F_BAD(tau) by definition (TPR = share of BAD with score >= tau,
+    # measured from the right; for a left-tail CDF use 1 - tpr and 1 - fpr)
     fpr, tpr = result['fpr'], result['tpr']
     thresholds = result['thresholds']
 

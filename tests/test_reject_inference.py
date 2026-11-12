@@ -8,6 +8,11 @@ from src.reject_inference import (
     load_rejects,
     pseudo_label_frame,
 )
+from pipeline.scenario_a.features import (  # noqa: E402
+    FORBIDDEN_FEATURES,
+    SCENARIO_A_FEATURE_COLUMNS,
+    add_scenario_a_features,
+)
 
 
 def _raw_frame(n, seed=0):
@@ -54,7 +59,8 @@ def test_build_augmented_dataset_pseudo_labels():
     p_rej = np.array([0.3, 0.6, 0.9])
 
     X_aug, y_aug, w = build_augmented_dataset(
-        Xf_raw, yr, Xr_raw, reject_pd=p_rej, reject_weight=1.0)
+        Xf_raw, yr, Xr_raw, reject_pd=p_rej, reject_weight=1.0,
+        feature_fn=add_scenario_a_features)
 
     assert len(X_aug) == 10 + 2 * 3
     assert len(y_aug) == len(w) == len(X_aug)
@@ -72,7 +78,7 @@ def test_build_augmented_dataset_real_labels():
 
     X_aug, y_aug, w = build_augmented_dataset(
         Xf_raw, yr, Xr_raw, label_col='bureau_target',
-        reject_weight=0.5)
+        reject_weight=0.5, feature_fn=add_scenario_a_features)
 
     assert len(X_aug) == 9
     assert y_aug.iloc[5:].tolist() == [1, 0, 1, 0]
@@ -85,10 +91,12 @@ def test_build_augmented_dataset_requires_exactly_one_label_source():
     Xr_raw = _raw_frame(2, seed=6)
 
     with pytest.raises(ValueError):
-        build_augmented_dataset(Xf_raw, yr, Xr_raw)
+        build_augmented_dataset(Xf_raw, yr, Xr_raw,
+                                feature_fn=add_scenario_a_features)
     with pytest.raises(ValueError):
         build_augmented_dataset(Xf_raw, yr, Xr_raw,
-                                label_col='t', reject_pd=np.array([0.5, 0.5]))
+                                label_col='t', reject_pd=np.array([0.5, 0.5]),
+                                feature_fn=add_scenario_a_features)
 
 
 def test_load_rejects_rejects_forbidden_columns(tmp_path):
@@ -98,7 +106,7 @@ def test_load_rejects_rejects_forbidden_columns(tmp_path):
     df.to_csv(p, index=False)
 
     with pytest.raises(ValueError, match='post-origination'):
-        load_rejects(p)
+        load_rejects(p, SCENARIO_A_FEATURE_COLUMNS, FORBIDDEN_FEATURES)
 
 
 def test_load_rejects_rejects_missing_columns(tmp_path):
@@ -107,4 +115,4 @@ def test_load_rejects_rejects_missing_columns(tmp_path):
     df.to_csv(p, index=False)
 
     with pytest.raises(ValueError, match='missing application columns'):
-        load_rejects(p)
+        load_rejects(p, SCENARIO_A_FEATURE_COLUMNS, FORBIDDEN_FEATURES)

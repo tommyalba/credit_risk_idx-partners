@@ -46,9 +46,7 @@ def calculate_probability_metrics(y_true: pd.Series, y_proba: np.ndarray) -> Dic
         # Threshold is fully managed in Stage 2 via find_optimal_threshold().
     }
 
-# ============================================================
 # THRESHOLD CLASSIFICATION METRICS
-# ============================================================
 def threshold_classification_metrics(y_true, y_proba, threshold):
     """
     Business-ready threshold metrics for binary classification.
@@ -94,9 +92,7 @@ def threshold_classification_metrics(y_true, y_proba, threshold):
     }
 
 
-# ============================================================
 # CLASSIFICATION REPORT & CONFUSION MATRIX
-# ============================================================
 def print_report_and_cm(y_true, y_pred, title):
     print(f"\n{title}")
     print(classification_report(
@@ -112,9 +108,7 @@ def print_report_and_cm(y_true, y_pred, title):
     return cm_df
 
 
-# ============================================================
 # BOOTSTRAP CONFIDENCE INTERVALS
-# ============================================================
 def bootstrap_metric_ci(y_true, y_proba, n_boot=1000, seed=42,
                          alpha=0.05,
                          metric_names=('roc_auc', 'log_loss',

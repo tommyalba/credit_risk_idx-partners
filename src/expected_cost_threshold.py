@@ -8,38 +8,35 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
 
 """
-Implementasi Fungsi Expected Cost untuk Penentuan Ambang Keputusan Optimal-Biaya
-pada Model Klasifikasi Risiko Kredit Biner.
+Expected-cost decision threshold for binary credit-risk classifiers.
 
-Kerangka teoretis (Elkan, 2001; BCBS, 2006 untuk estimasi komponen LGD/EAD):
+Theoretical framework (Elkan, 2001; BCBS, 2006 for LGD/EAD components):
 
     E[C(tau)] = C_FN * P(y=1) * P(yhat=0 | y=1, tau)
               + C_FP * P(y=0) * P(yhat=1 | y=0, tau)
 
-    di mana:
+    where:
         P(yhat=0 | y=1, tau) = 1 - Recall_BAD(tau)      [False Negative Rate]
         P(yhat=1 | y=0, tau) = FPR(tau)                  [False Positive Rate]
 
-    C_FN (biaya false negative, memberi pinjaman pada peminjam yang gagal bayar)
-        didekomposisi sebagai:  C_FN ≈ EAD * LGD
+    C_FN (cost of a false negative -- lending to a defaulting borrower)
+        decomposes as:  C_FN ≈ EAD * LGD
 
-    C_FP (biaya false positive, menolak peminjam yang sesungguhnya baik)
-        didekomposisi sebagai opportunity cost margin bunga marjinal:
-        C_FP ≈ EAD * spread_bunga * durasi_pinjaman
+    C_FP (cost of a false positive -- rejecting a genuinely good borrower)
+        decomposes as the opportunity cost of foregone interest margin:
+        C_FP ≈ EAD * interest_spread * loan_duration
 
     tau* = argmin_tau E[C(tau)]
 
-Catatan epistemik penting:
-    C_FN dan C_FP di sini adalah ESTIMASI PORTOFOLIO-LEVEL, bukan kepastian
-    per-individu. Modul ini menyediakan dua mode: (a) biaya skalar tetap
-    (rasio C_FN/C_FP konstan di seluruh observasi), dan (b) biaya per-observasi
-    bila EAD bervariasi antar peminjam (mis. plafon pinjaman berbeda) --
-    mode (b) lebih realistis untuk portofolio kredit konsumen heterogen.
+Important epistemic note:
+    C_FN and C_FP here are PORTFOLIO-LEVEL ESTIMATES, not per-individual
+    certainties. This module provides two modes: (a) fixed scalar costs
+    (constant C_FN/C_FP ratio across observations), and (b) per-observation
+    costs when EAD varies across borrowers (e.g. different loan ceilings) --
+    mode (b) is more realistic for heterogeneous consumer credit portfolios.
 """
 
-# ===========================================================================
-# 1. ESTIMASI C_FN DAN C_FP DARI KOMPONEN EAD / LGD / SPREAD
-# ===========================================================================
+# 1. ESTIMATING C_FN AND C_FP FROM EAD / LGD / SPREAD COMPONENTS
 def estimate_cost_components(
     ead,
     lgd,
@@ -48,38 +45,38 @@ def estimate_cost_components(
     fixed_cfp=None,
 ):
     """
-    Menurunkan C_FN dan C_FP dari komponen ekonomi primitif.
+    Derive C_FN and C_FP from primitive economic components.
 
     Parameters
     ----------
-    ead : float atau array-like
-        Exposure at Default -- saldo terutang saat gagal bayar. Skalar untuk
-        estimasi portofolio-level, atau array sepanjang n_observasi bila
-        plafon pinjaman bervariasi per individu.
-    lgd : float atau array-like
-        Loss Given Default, proporsi EAD yang tidak terpulihkan (0-1).
-        Estimasi historis: LGD = 1 - (nilai_sekarang_pemulihan / EAD).
+    ead : float or array-like
+        Exposure at Default -- outstanding balance at default. Scalar for
+        portfolio-level estimation, or an array of length n_observations
+        when loan ceilings vary per individual.
+    lgd : float or array-like
+        Loss Given Default, the unrecovered share of EAD (0-1).
+        Historical estimate: LGD = 1 - (recovery_present_value / EAD).
     interest_spread : float, optional
-        Margin bunga tahunan (mis. 0.08 untuk spread 8%), digunakan untuk
-        menghitung C_FP sebagai opportunity cost. Wajib diisi bila fixed_cfp
-        tidak diberikan.
+        Annual interest margin (e.g. 0.08 for an 8% spread), used to
+        compute C_FP as opportunity cost. Required unless fixed_cfp
+        is given.
     loan_duration_years : float, optional
-        Estimasi durasi rata-rata pinjaman dalam tahun.
+        Estimated average loan duration in years.
     fixed_cfp : float, optional
-        Alternatif: berikan C_FP secara langsung (mis. dari estimasi internal
-        unit bisnis) tanpa menurunkannya dari spread*durasi.
+        Alternative: supply C_FP directly (e.g. from an internal business
+        unit estimate) without deriving it from spread*duration.
 
     Returns
     -------
-    dict berisi C_FN, C_FP (skalar atau array, mengikuti tipe ead), dan rasio
-    C_FN/C_FP -- rasio inilah yang sesungguhnya menentukan posisi tau*,
-    bukan magnitudo absolut C_FN dan C_FP.
+    dict with C_FN, C_FP (scalar or array, following the type of ead), and
+    the C_FN/C_FP ratio -- the ratio is what actually determines the
+    position of tau*, not the absolute magnitude of C_FN and C_FP.
     """
     ead = np.asarray(ead, dtype=float)
     lgd = np.asarray(lgd, dtype=float)
 
     if np.any((lgd < 0) | (lgd > 1)):
-        raise ValueError("LGD harus berada pada rentang [0, 1].")
+        raise ValueError("LGD must be in the range [0, 1].")
 
     c_fn = ead * lgd
 
@@ -88,7 +85,7 @@ def estimate_cost_components(
     else:
         if interest_spread is None or loan_duration_years is None:
             raise ValueError(
-                "Sertakan fixed_cfp, ATAU interest_spread + loan_duration_years."
+                "Provide fixed_cfp, OR interest_spread + loan_duration_years."
             )
         c_fp = ead * interest_spread * loan_duration_years
 
@@ -106,22 +103,20 @@ def estimate_cost_components(
     }
 
 
-# ===========================================================================
-# 2. FUNGSI EXPECTED COST -- MODE SKALAR (rasio biaya konstan portofolio)
-# ===========================================================================
+# 2. EXPECTED COST -- SCALAR MODE (constant portfolio cost ratio)
 def expected_cost_curve_scalar(y_true, y_proba, c_fn, c_fp, n_thresholds=1000):
     """
-    Menghitung E[C(tau)] di seluruh kandidat ambang, dengan C_FN dan C_FP
-    sebagai skalar tetap yang berlaku seragam pada seluruh portofolio.
+    Compute E[C(tau)] over all candidate thresholds, with C_FN and C_FP
+    as fixed scalars applied uniformly across the portfolio.
 
-    Ini adalah penyederhanaan paling umum dipakai dalam praktik: estimasi
-    C_FN dan C_FP sebagai rata-rata portofolio (mis. EAD rata-rata x LGD
-    rata-rata), bukan per-observasi.
+    This is the most common simplification in practice: C_FN and C_FP
+    estimated as portfolio averages (e.g. mean EAD x mean LGD) rather
+    than per observation.
 
     Returns
     -------
     dict: thresholds, expected_costs, optimal_threshold, optimal_cost,
-          serta fpr/fnr di titik optimal untuk interpretasi.
+          plus fpr/fnr at the optimal point for interpretation.
     """
     y_true = np.asarray(y_true)
     y_proba = np.asarray(y_proba)
@@ -161,9 +156,7 @@ def expected_cost_curve_scalar(y_true, y_proba, c_fn, c_fp, n_thresholds=1000):
     }
 
 
-# ===========================================================================
-# 3. FUNGSI EXPECTED COST -- MODE PER-OBSERVASI (EAD heterogen)
-# ===========================================================================
+# 3. EXPECTED COST -- PER-OBSERVATION MODE (heterogeneous EAD)
 
 def expected_cost_curve_per_observation(
     y_true, y_proba, c_fn_array, c_fp_array, n_thresholds=1000
@@ -227,9 +220,7 @@ def expected_cost_curve_per_observation(
     }
 
 
-# ===========================================================================
-# 4. PERBANDINGAN TAU* ANTAR KRITERIA (Cost vs Youden vs F1)
-# ===========================================================================
+# 4. COMPARING TAU* ACROSS CRITERIA (Cost vs Youden vs F1)
 
 def compare_threshold_criteria(y_true, y_proba, c_fn, c_fp):
     """
@@ -242,16 +233,16 @@ def compare_threshold_criteria(y_true, y_proba, c_fn, c_fp):
     y_true = np.asarray(y_true)
     y_proba = np.asarray(y_proba)
 
-    # Kriteria 1: Expected Cost
+    # Criterion 1: Expected Cost
     cost_result = expected_cost_curve_scalar(y_true, y_proba, c_fn, c_fp)
     tau_cost = cost_result['optimal_threshold']
 
-    # Kriteria 2: Youden's J
+    # Criterion 2: Youden's J
     fpr, tpr, roc_thresholds = roc_curve(y_true, y_proba)
     j_scores = tpr - fpr
     tau_youden = roc_thresholds[np.argmax(j_scores)]
 
-    # Kriteria 3: F1-maximal (PR curve)
+    # Criterion 3: F1-maximal (PR curve)
     precisions, recalls, pr_thresholds = precision_recall_curve(y_true, y_proba)
     precisions_t, recalls_t = precisions[:-1], recalls[:-1]
     denom = precisions_t + recalls_t
@@ -265,21 +256,19 @@ def compare_threshold_criteria(y_true, y_proba, c_fn, c_fp):
         'tau_youden_j': round(float(tau_youden), 4),
         'tau_f1_maximal': round(float(tau_f1), 4),
         'cost_ratio_CFN_CFP': round(c_fn / c_fp, 2),
-        'interpretasi': (
-            f"Dengan rasio C_FN/C_FP = {c_fn/c_fp:.4f}, ambang optimal-biaya "
-            f"berada {'di bawah' if tau_cost < tau_youden else 'di atas'} "
-            f"ambang Youden -- selisih {abs(tau_cost - tau_youden):.4f} pada "
-            f"skala probabilitas."
+        'interpretation': (
+            f"With a C_FN/C_FP ratio of {c_fn/c_fp:.4f}, the cost-optimal "
+            f"threshold is {'below' if tau_cost < tau_youden else 'above'} "
+            f"the Youden threshold -- difference {abs(tau_cost - tau_youden):.4f} "
+            f"on the probability scale."
         ),
     }
 
 
-# ===========================================================================
-# 5. VISUALISASI KURVA EXPECTED COST
-# ===========================================================================
+# 5. EXPECTED-COST CURVE VISUALIZATION
 
 def plot_expected_cost_curve(cost_result, dataset_name='train_cal', ax=None):
-    """Memvisualisasikan E[C(tau)] terhadap tau, dengan penanda titik optimal."""
+    """Plot E[C(tau)] against tau, marking the optimal point."""
     if ax is None:
         fig, ax = plt.subplots(figsize=(7, 5))
 

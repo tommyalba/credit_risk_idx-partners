@@ -130,9 +130,7 @@ import numpy as np
 import pandas as pd
 from optbinning import BinningProcess
 
-# ============================================================================
 # 1. Feature routing
-# ============================================================================
 ALGORITHMIC_NUMERICAL: List[str] = [
     'annual_inc', 'credit_age_years', 'dti', 'emp_length_ordinal', 'inq_last_6mths', 
     'loan_to_income', 'open_acc_ratio', 'revol_util',
@@ -181,9 +179,7 @@ ALGORITHMIC_FIT_PARAMS: Dict[str, dict] = {
 }
 
 
-# ============================================================================
 # 2. Derived-feature construction
-# ============================================================================
 def extract_emp_length_years(text: Optional[str]) -> float:
     """Parse free-text employment length, e.g. '< 1 year', '10+ years'."""
     if pd.isna(text):
@@ -239,9 +235,7 @@ def add_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-# ============================================================================
 # 3. Fit / transform contract
-# ============================================================================
 
 @dataclass
 class BinningArtifacts:
@@ -491,17 +485,13 @@ def transform_binning(
     X = add_derived_features(X)
 
     if metric == 'bins':
-        # =========================================================
         # 1. 'BINS' STRATEGY: Outputs interval category strings
-        # =========================================================
         canonical_labels = transform_bin_labels(X, binning_artifacts)
         for col in ALGORITHMIC_FEATURES:
             X[f"{col}_bin"] = canonical_labels[col].astype('category')
 
     elif metric in ['woe', 'indices']:
-        # =========================================================
         # 2. 'WOE' / 'INDICES' STRATEGY: numeric representation
-        # =========================================================
         suffix = "woe" if metric == "woe" else "idx"
         target_dtype = float if metric == "woe" else int
 
@@ -526,9 +516,7 @@ def transform_binning(
      
     return X
 
-# ============================================================================
 # 5. Audit utilities
-# ============================================================================
 def binning_summary(binning_artifacts: BinningArtifacts) -> pd.DataFrame:
     """IV / bin-count / optimizer-status audit table for the 4 algorithmic features."""
     return binning_artifacts.process.summary()

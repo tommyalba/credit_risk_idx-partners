@@ -13,9 +13,6 @@ from src.metrics import calculate_probability_metrics
 logger = logging.getLogger(__name__)
 
 
-# ============================================================
-# CALIBRATION CURVE TABLE
-# ============================================================
 def calibration_curve_table(
     y_true, y_proba, 
     n_bins=10, 
@@ -33,7 +30,7 @@ def calibration_curve_table(
     }).copy()
 
     if strategy == 'quantile':
-        # qcut bisa gagal kalau banyak probability identik -> duplicates='drop'
+        # qcut can fail with many identical probabilities -> duplicates='drop'
         df['bin'] = pd.qcut(df['p'], q=n_bins, duplicates='drop')
     elif strategy == 'uniform':
         df['bin'] = pd.cut(df['p'], bins=n_bins)
@@ -52,39 +49,33 @@ def calibration_curve_table(
     return out
 
 
-# ============================================================
 # CALIBRATION STRATEGIES (Open/Closed)
-# ============================================================
-# Type alias untuk strategi kalibrasi
-# Menerima (p_train_cal, y_train_cal, p_target) -> mengembalikan p_calibrated
+# Type alias for calibration strategies
+# Accepts (p_train_cal, y_train_cal, p_target) -> returns p_calibrated
 CalibrateStrategy = Callable[[np.ndarray, pd.Series, np.ndarray], np.ndarray]
 
 def _calibrate_sigmoid(p_train_cal: np.ndarray, y_train_cal: pd.Series, p_target: np.ndarray) -> np.ndarray:
-    """Platt Scaling / Sigmoid Calibration menggunakan Logistic Regression."""
+    """Platt Scaling / Sigmoid Calibration using Logistic Regression."""
     calibrator = LogisticRegression(C=1e6, solver='lbfgs', max_iter=1000, random_state=42)
-    # Scikit-Learn LogisticRegression mewajibkan input 2D array
+    # Scikit-Learn LogisticRegression requires 2D input
     calibrator.fit(p_train_cal.reshape(-1, 1), y_train_cal)
     return calibrator.predict_proba(p_target.reshape(-1, 1))[:, 1]
 
 def _calibrate_isotonic(p_train_cal: np.ndarray, y_train_cal: pd.Series, p_target: np.ndarray) -> np.ndarray:
     """Isotonic Regression Calibration (Non-parametric)."""
     calibrator = IsotonicRegression(out_of_bounds='clip')
-    # IsotonicRegression menerima 1D array
+    # IsotonicRegression accepts 1D arrays
     calibrator.fit(p_train_cal, y_train_cal)
     return calibrator.predict(p_target)
 
-# Registry untuk metode kalibrasi yang tersedia
+# Registry of available calibration methods
 CALIBRATION_STRATEGIES: Dict[str, CalibrateStrategy] = {
     'sigmoid': _calibrate_sigmoid,
     'isotonic': _calibrate_isotonic
 }
 
-# ============================================================
 
-
-# ============================================================
 # CORE PIPELINE FUNCTION
-# ============================================================
 def run_probability_pipeline(
     fitted_models: Dict[str, Any],
     data_splits: Dict[str, pd.DataFrame],
@@ -96,32 +87,32 @@ def run_probability_pipeline(
 
     Args:
         fitted_models (Dict[str, Any]): Dict contains `model_name` -> model object that has been fitted.
-        data_splits (Dict[str, pd.DataFrame]): Dict berisi 'train_cal', 'valid', dan 'test' dataframes.
-        y_train_cal (pd.Series): Aktual target label untuk subset calibration.
-        cal_strategies (Dict[str, CalibrateStrategy]): Registry strategi kalibrasi.
+        data_splits (Dict[str, pd.DataFrame]): Dict containing 'train_cal', 'valid', and 'test' dataframes.
+        y_train_cal (pd.Series): Actual target labels for the calibration subset.
+        cal_strategies (Dict[str, CalibrateStrategy]): Calibration strategy registry.
 
     Returns:
-        Dict[str, Dict[str, np.ndarray]]: Registry probabilitas terstruktur.
+        Dict[str, Dict[str, np.ndarray]]: Structured probability registry.
     """
-    # Validasi input data split
+    # Validate input data splits
     required_splits = {'train_cal', 'valid', 'test'}
     if not required_splits.issubset(data_splits.keys()):
-        raise KeyError(f"data_splits wajib memiliki key berikut: {required_splits}")
+        raise KeyError(f"data_splits must contain the following keys: {required_splits}")
 
     proba_store: Dict[str, Dict[str, np.ndarray]] = {}
     
-    # --- TAHAP 1: Ekstraksi Probabilitas Mentah (Raw) ---
+    # --- STAGE 1: Raw probability extraction ---
     for model_name, model_obj in fitted_models.items():
         logger.info(f"Extracting raw probabilities for model: %s", model_name)
         
-        # Buat key untuk versi raw model tersebut
+        # Create the key for this raw model version
         raw_key = f"{model_name}"
         proba_store[raw_key] = {}
         
         for split_name, X_data in data_splits.items():
             proba_store[raw_key][split_name] = extract_positive_proba(model_obj, X_data)
             
-        # --- TAHAP 2: Kalibrasi Otomatis (Sigmoid & Isotonic) ---
+        # --- STAGE 2: Automatic calibration (Sigmoid & Isotonic) ---
         p_train_cal_raw = proba_store[raw_key]['train_cal']
         
         for strategy_name, strategy_func in cal_strategies.items():
@@ -133,7 +124,7 @@ def run_probability_pipeline(
             for split_name, _ in data_splits.items():
                 p_target_raw = proba_store[raw_key][split_name]
                 
-                # Eksekusi kalibrasi menggunakan fungsi strategi terkait
+                # Execute calibration via the corresponding strategy function
                 proba_store[cal_key][split_name] = strategy_func(
                     p_train_cal_raw, 
                     y_train_cal, 
@@ -182,7 +173,7 @@ def should_calibrate(cal_leaderboard: pd.DataFrame, base_model_name: str) -> Tup
     Determines whether calibration provides performance improvement based on the lowest Brier Score.
     
     Args:
-        cal_leaderboard (pd.DataFrame): DataFrame results of `evaluate calibration candidates`.
+        cal_leaderboard (pd.DataFrame): Results dataframe from `evaluate_calibration_candidates`.
         base_model_name (str): Base model name (example: 'xgb_raw').
         
     Returns:
@@ -204,9 +195,7 @@ def should_calibrate(cal_leaderboard: pd.DataFrame, base_model_name: str) -> Tup
 
 
 
-# ============================================================
 # CALIBRATION DIAGNOSTICS & LINEAR (LOGIT) RECALIBRATION
-# ============================================================
 def _logit(p):
     p = np.clip(np.asarray(p, dtype=float), 1e-12, 1 - 1e-12)
     return np.log(p / (1 - p))

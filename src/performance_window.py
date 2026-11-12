@@ -75,9 +75,7 @@ DEFAULT_INDETERMINATE_STATUSES: List[str] = [
 ]
 
 
-# ============================================================================
 # 1. Data-driven M selection
-# ============================================================================
 
 def compute_time_to_bad_distribution(
     df: pd.DataFrame,
@@ -128,9 +126,7 @@ def recommend_performance_window(months_to_bad: pd.Series, coverage: float = 0.9
     return int(np.ceil(months_to_bad.quantile(coverage)))
 
 
-# ============================================================================
 # 2. Eligibility filter
-# ============================================================================
 
 @dataclass
 class PerformanceWindowResult:
@@ -244,9 +240,7 @@ def eligibility_funnel_report(result: PerformanceWindowResult) -> pd.DataFrame:
     ])
 
 
-# ============================================================================
 # 3. Diagnostic: bad rate by vintage, before/after the filter
-# ============================================================================
 
 def bad_rate_by_vintage(
     df_with_target: pd.DataFrame, issue_col: str = "issue_d", target_col: str = "target"
@@ -266,9 +260,7 @@ def bad_rate_by_vintage(
     )
 
 
-# ============================================================================
 # 4. Safe modeling horizon (residual near-boundary resolution skew)
-# ============================================================================
 
 def safe_horizon_cutoff(snapshot_date: pd.Timestamp, M: int) -> pd.Timestamp:
     """

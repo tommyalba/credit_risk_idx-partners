@@ -70,7 +70,8 @@ def main():
     y_valid = deserialize_data('data/interim/y_valid.pkl')
     bundle = joblib.load(args.bundle)
 
-    rejects_raw = load_rejects(args.rejects)
+    rejects_raw = load_rejects(
+        args.rejects, SCENARIO_A_FEATURE_COLUMNS, FORBIDDEN_FEATURES)
     print(f'rejects loaded: {len(rejects_raw)} rows')
 
     if args.label_col is None:
@@ -88,7 +89,8 @@ def main():
     X_aug, y_aug, w_aug = build_augmented_dataset(
         X_train_raw, y_train, rejects_raw,
         label_col=args.label_col, reject_pd=reject_pd,
-        reject_weight=args.reject_weight)
+        reject_weight=args.reject_weight,
+        feature_fn=add_scenario_a_features)
     n_rej = len(X_aug) - len(X_train_raw)
     print(f'augmented train: {len(X_aug)} rows '
           f'(+{n_rej} reject-derived, weight sum '

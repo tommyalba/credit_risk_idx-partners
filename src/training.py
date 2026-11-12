@@ -15,9 +15,7 @@ from lightgbm import LGBMClassifier
 logger = logging.getLogger(__name__)
 
 
-# ============================================================
 # Safe extraction of best iteration
-# ============================================================
 def safe_get_best_iteration(estimator: Any) -> Optional[int]:
     """Safely extract the best iteration from a fitted estimator."""
     if hasattr(estimator, 'best_iteration'):
@@ -35,9 +33,7 @@ def safe_get_best_score(estimator: Any) -> Optional[float]:
     return None
 
 
-# ============================================================
 # ESTIMATOR BUILDER (Consolidated)
-# ============================================================
 def build_estimator(estimator_class: type, params: Dict[str, Any]) -> Any:
     """
     Creates an instance of an estimator dynamically with safe deep-copied parameters.
@@ -56,9 +52,7 @@ def build_estimator(estimator_class: type, params: Dict[str, Any]) -> Any:
         raise TypeError(f"Parameters must be a dictionary, got {type(params)} instead.")
     return estimator_class(**copy.deepcopy(params))
 
-# ============================================================
 # FITTING STRATEGIES (Open/Closed Principle)
-# ============================================================
 # Type alias to make it easier to read the fit function data type
 FitStrategy = Callable[[Any, pd.DataFrame, pd.Series, pd.DataFrame, pd.Series], Any]
 
@@ -92,16 +86,14 @@ def _fit_lgbm_strategy(estimator, X_fit: pd.DataFrame, y_fit: pd.Series, X_es: p
     )
     return estimator
 
-# Registry Strategy: Jika ingin menambah model (misal LightGBM), cukup tambahkan fungsi dan daftarkan di sini.
+# Registry Strategy: to add a model (e.g. LightGBM), add a function and register it here.
 FIT_STRATEGIES: Dict[str, FitStrategy] = {
     'xgb': _fit_xgb_strategy,
     'cat': _fit_cat_strategy,
     'lgbm': _fit_lgbm_strategy,
 }
 
-# ============================================================
 # CORE FIT MODULE
-# ============================================================
 def fit_candidate_model(
     model_name: str, 
     family: str,
@@ -157,9 +149,7 @@ def fit_candidate_model(
     
     return fitted_estimator
 
-# ============================================================
 # PIPELINE ORCHESTRATION
-# ============================================================
 def build_candidate_registry(
     xgb_params: Dict[str, Any], 
     cat_params: Dict[str, Any],
@@ -275,18 +265,14 @@ def fit_all_candidate_models(
     return fitted_models
 
 
-# ============================================================
 # MODEL SERIALIZATION UTILITIES
-# ============================================================
 def save_best_model(model_obj: Any, filepath: str) -> None:
     """Save ML model objects to disk using joblib."""
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     joblib.dump(model_obj, filepath)
 
 
-# ============================================================
 # STAGE A WINNER SELECTOR
-# ============================================================
 def select_stage_a_winner(
     leaderboard_df: pd.DataFrame,
     fitted_models: Dict[str, Any],

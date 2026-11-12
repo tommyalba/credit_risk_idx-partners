@@ -148,9 +148,7 @@ LOOKUP_COLUMNS = [
 ]
 
 
-# ============================================================================
 # 1. Configuration and artifact containers
-# ============================================================================
 
 @dataclass(frozen=True)
 class ScorecardConfig:
@@ -243,9 +241,7 @@ class ScorecardArtifacts:
         return self.row_lookup.get(base_name, {}).get(bin_label)
 
 
-# ============================================================================
 # 2. Internal helpers
-# ============================================================================
 
 def _strip_woe_suffix(feature_name: str) -> str:
     """
@@ -335,9 +331,7 @@ def _ordered_lookup_table(scorecard: ScorecardArtifacts) -> pd.DataFrame:
     )
 
 
-# ============================================================================
 # 3. Scorecard construction
-# ============================================================================
 
 def build_scorecard(
     model,
@@ -397,9 +391,7 @@ def build_scorecard(
     )
 
 
-# ============================================================================
 # 4. Scoring and validation
-# ============================================================================
 
 def score_dataframe(scorecard: ScorecardArtifacts, X: pd.DataFrame) -> pd.Series:
     """
@@ -554,9 +546,7 @@ def explain_score(scorecard: ScorecardArtifacts, x_row: pd.DataFrame) -> pd.Data
     return pd.concat([base_row, breakdown, total_row], ignore_index=True)
 
 
-# ============================================================================
 # 5. Reporting
-# ============================================================================
 
 def _markdown_table(rows: List[dict], columns: List[tuple]) -> List[str]:
     """
@@ -624,9 +614,7 @@ def export_scorecard_report(scorecard: ScorecardArtifacts) -> str:
     return "\n".join(lines)
 
 
-# ============================================================================
 # 6. Audit
-# ============================================================================
 
 def _audit_row(section: str, check: str, passed: bool, n_issues: int, details: str = "") -> dict:
     return {

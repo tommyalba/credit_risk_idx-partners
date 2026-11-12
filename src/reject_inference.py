@@ -21,8 +21,10 @@ Two reject label regimes are supported:
    toward the applicant pool. Treat results as a covariate correction,
    not as reject inference proper.
 
-Reject payloads must satisfy the Scenario-A application-time contract:
-`SCENARIO_A_FEATURE_COLUMNS` present, `FORBIDDEN_FEATURES` absent.
+Reject payloads must satisfy an application-time feature contract:
+`feature_columns` present, `forbidden_features` absent. The caller
+(e.g. pipeline.scenario_a.features) owns the contract; this module
+stays scenario-agnostic.
 """
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
@@ -31,30 +33,16 @@ import numpy as np
 import pandas as pd
 
 
-def _default_scenario_a_contracts():
-    from pipeline.scenario_a.features import (
-        FORBIDDEN_FEATURES,
-        SCENARIO_A_FEATURE_COLUMNS,
-        add_scenario_a_features,
-    )
-    return SCENARIO_A_FEATURE_COLUMNS, FORBIDDEN_FEATURES, add_scenario_a_features
-
-
 def load_rejects(
     path,
+    feature_columns: List[str],
+    forbidden_features: List[str],
     label_col: Optional[str] = None,
-    feature_columns: Optional[List[str]] = None,
-    forbidden_features: Optional[List[str]] = None,
 ) -> pd.DataFrame:
-    """Read a rejects file (CSV/parquet) and validate the application contract."""
+    """Read a rejects file (CSV/parquet) and validate the feature contract."""
     path = Path(path)
     df = (pd.read_parquet(path) if path.suffix == '.parquet'
           else pd.read_csv(path))
-
-    if feature_columns is None or forbidden_features is None:
-        def_features, def_forbidden, _ = _default_scenario_a_contracts()
-        feature_columns = feature_columns or def_features
-        forbidden_features = forbidden_features or def_forbidden
 
     missing = [c for c in feature_columns if c not in df.columns]
     if missing:
@@ -90,7 +78,8 @@ def build_augmented_dataset(
     label_col: Optional[str] = None,
     reject_pd: Optional[np.ndarray] = None,
     reject_weight: float = 1.0,
-    feature_fn: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = None,
+    *,
+    feature_fn: Callable[[pd.DataFrame], pd.DataFrame],
 ) -> Tuple[pd.DataFrame, pd.Series, np.ndarray]:
     """Combine funded rows with rejects into one training frame.
 
@@ -106,7 +95,10 @@ def build_augmented_dataset(
     reject_weight : sample-weight multiplier applied to every reject.
         Values < 1 down-weight the unverified reject population relative
         to funded loans with known outcomes.
-    feature_fn : feature derivation function. Defaults to add_scenario_a_features.
+    feature_fn : feature derivation function applied to both funded and
+        reject raw frames (e.g. pipeline.scenario_a.features.
+        add_scenario_a_features). Required -- this module does not own
+        a feature contract.
 
     Returns
     -------
@@ -115,9 +107,6 @@ def build_augmented_dataset(
     """
     if (label_col is None) == (reject_pd is None):
         raise ValueError('provide exactly one of label_col or reject_pd')
-
-    if feature_fn is None:
-        _, _, feature_fn = _default_scenario_a_contracts()
 
     X_f = feature_fn(X_funded_raw)
     X_r = feature_fn(X_rejects_raw)

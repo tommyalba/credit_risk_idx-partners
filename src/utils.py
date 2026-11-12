@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import joblib
 
-#===================================
 
 # Import Data while Handling Duplicate
 def importData(data_path):
@@ -265,11 +264,11 @@ def split_input_output(data, target_col, columns_to_keep=None):
     """
     # Jika list kolom disediakan, filter dataframe terlebih dahulu
     if columns_to_keep is not None:
-        # Gunakan intersection untuk mencegah KeyError jika ada kolom yang typo/tidak ditemukan
+        # Use intersection to prevent KeyError if any column name is mistyped or missing
         valid_cols = [col for col in columns_to_keep if col in data.columns]
         data = data[valid_cols]
         
-    # Drop the target column to get input features (hanya dari kolom yang sudah difilter)
+    # Drop the target column to get input features (only from already-filtered columns)
     X = data.drop(target_col, axis=1, errors='ignore')
     
     # Select the target column as output

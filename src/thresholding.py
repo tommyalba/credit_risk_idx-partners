@@ -7,9 +7,7 @@ from sklearn.metrics import precision_recall_curve, roc_curve
 
 from src.metrics import threshold_classification_metrics
 
-# ============================================================
 # FIND BEST COST-BASED THRESHOLD
-# ============================================================
 def find_best_cost_threshold(
     y_true, y_proba,
     c_fn=None, c_fp=None):
@@ -36,9 +34,7 @@ def find_best_cost_threshold(
     # objective_value = E[C] minimum (dalam skala biaya relatif)
     return result['optimal_threshold'], result['optimal_cost']
 
-# ============================================================
 # FIND BEST F1 THRESHOLD
-# ============================================================
 def find_best_f1_threshold(y_true, y_proba):
     precision, recall, thresholds = precision_recall_curve(y_true, y_proba)
     if len(thresholds) == 0:
@@ -56,9 +52,7 @@ def find_best_f1_threshold(y_true, y_proba):
     best_idx = np.argmax(f1_scores)
     return thresholds[best_idx], f1_scores[best_idx]
 
-# ============================================================
 # FIND BEST YOUDEN J THRESHOLD
-# ============================================================
 def find_best_youden_threshold(y_true, y_proba):
     fpr, tpr, thresholds = roc_curve(y_true, y_proba)
     if len(thresholds) == 0:
@@ -68,9 +62,7 @@ def find_best_youden_threshold(y_true, y_proba):
     best_idx = np.argmax(j_scores)
     return thresholds[best_idx], j_scores[best_idx]
 
-# ============================================================
 # FIND OPTIMAL THRESHOLD
-# ============================================================
 def find_optimal_threshold(y_true, y_proba, objective='cost'):
     if objective == 'f1':
         return find_best_f1_threshold(y_true, y_proba)
@@ -81,9 +73,7 @@ def find_optimal_threshold(y_true, y_proba, objective='cost'):
     else:
         raise ValueError(f"Unsupported threshold objective: {objective}")
 
-# ============================================================
 # BUILD THRESHOLD ROW
-# ============================================================
 def build_threshold_row(
     model_name,
     split_name,
