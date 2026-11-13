@@ -3,6 +3,13 @@ import numpy as np
 import joblib
 
 
+# Cohesive palette (seaborn deep): good=blue, bad=red
+C_BLUE, C_RED, C_ORANGE, C_GREEN = '#4C72B0', '#C44E52', '#DD8452', '#55A868'
+C_GRAY = '#7f7f7f'
+# int and str keys: target dtype varies across notebook/pipeline callers
+TARGET_COLORS = {0: C_BLUE, 1: C_RED, '0': C_BLUE, '1': C_RED}
+
+
 # Import Data while Handling Duplicate
 def importData(data_path):
     dataframe = pd.read_csv(data_path)
@@ -88,7 +95,7 @@ def plot_numeric_distributions(
     import seaborn as sns
     import matplotlib.pyplot as plt
 
-    # Validasi target_col
+    # Validate target_col
     if isinstance(target_col, str):
         if target_col not in dataframe.columns:
             raise KeyError(f"Column '{target_col}' not found in DataFrame.")
@@ -103,7 +110,7 @@ def plot_numeric_distributions(
     else:
         raise TypeError("`target_col` must be a String (column name) or Pandas Series / NumPy Array.")
     
-    # Ambil semua kolom numerik (target sudah di-handle)
+    # Select all numerical columns (the target has already been handled)
     num_cols = df_temp.select_dtypes(include=['int64', 'float64']).columns
     num_cols = [col for col in num_cols if col != hue_col]
 
@@ -113,7 +120,7 @@ def plot_numeric_distributions(
     sns.set_theme(style="whitegrid")
 
     fig, axes = plt.subplots(len(num_cols), 2, figsize=(16, 6 * len(num_cols)))
-    axes = np.atleast_2d(axes)  # pastikan selalu 2D
+    axes = np.atleast_2d(axes)  # always ensure it is 2D
 
     for i, col in enumerate(num_cols):
         # KDE Plot
@@ -123,10 +130,33 @@ def plot_numeric_distributions(
             hue=hue_col,
             fill=True,
             common_norm=False,
-            palette={0: 'blue', 1: 'red'},
+            palette=TARGET_COLORS,
             alpha=0.5,
             ax=axes[i, 0]
         )
+        # Mean ("--") and median ("-") reference lines per target class
+        stat_handles, stat_labels = [], []
+        for target_val in df_temp[hue_col].unique():
+            subset = df_temp.loc[df_temp[hue_col] == target_val, col]
+            line_color = TARGET_COLORS.get(
+                target_val, TARGET_COLORS.get(str(target_val), C_GRAY))
+            tag = 'Bad' if str(target_val) in ('1', 'True', 'true') else 'Good'
+            for stat, ls in (('Mean', '--'), ('Median', '-')):
+                v = subset.mean() if stat == 'Mean' else subset.median()
+                line = axes[i, 0].axvline(
+                    v, color=line_color, linestyle=ls, linewidth=1.5,
+                    alpha=0.8, label=f'{stat} ({tag})' if i == 0 else None)
+                if i == 0:
+                    stat_handles.append(line)
+                    stat_labels.append(f'{stat} ({tag})')
+
+        # Second legend for the stat lines on the first row only;
+        # seaborn's own hue legend (Good/Bad) stays untouched
+        if i == 0 and stat_handles:
+            leg2 = axes[i, 0].legend(handles=stat_handles, labels=stat_labels,
+                                    loc='upper left', fontsize=8,
+                                    title='Mean & Median')
+            axes[i, 0].add_artist(leg2)
         axes[i, 0].set_title(f'Density Distribution of `{col}` by Target ({hue_col})', fontsize=13)
         
         # Boxplot
@@ -134,7 +164,7 @@ def plot_numeric_distributions(
             data=df_temp,
             x=hue_col,
             y=col,
-            palette={'0': 'blue', '1': 'red'},
+            palette=TARGET_COLORS,
             ax=axes[i, 1]
         )
         axes[i, 1].set_title(f'Median Comparison of `{col}` by Target ({hue_col}))', fontsize=13)
