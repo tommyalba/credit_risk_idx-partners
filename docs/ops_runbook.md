@@ -89,7 +89,8 @@ committed bundle state.
 
 - PDs are conditional on funding (Scenario A). Applicant-pool PD is
   plausibly 1.4–1.9× funded-book PD; oracle τ ~0.12–0.18 vs deployed
-  0.288 (`experiments/reports/reject_inference.md`).
+  0.288 (`experiments/reports/reject_inference.md`). Reject-data
+  collection spec: `docs/reject_data_spec.md`.
 - Segment exceptions under monitoring: `small_business` under-predicts
   ~5pp, 60-month term over-predicts ~6pp OOT
   (`experiments/reports/calibration_parity.md`).

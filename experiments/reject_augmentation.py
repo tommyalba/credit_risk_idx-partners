@@ -71,7 +71,8 @@ def main():
     bundle = joblib.load(args.bundle)
 
     rejects_raw = load_rejects(
-        args.rejects, SCENARIO_A_FEATURE_COLUMNS, FORBIDDEN_FEATURES)
+        args.rejects, SCENARIO_A_FEATURE_COLUMNS, FORBIDDEN_FEATURES,
+        label_col=args.label_col)
     print(f'rejects loaded: {len(rejects_raw)} rows')
 
     if args.label_col is None:

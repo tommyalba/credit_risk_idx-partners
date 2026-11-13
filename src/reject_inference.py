@@ -47,11 +47,14 @@ def load_rejects(
     missing = [c for c in feature_columns if c not in df.columns]
     if missing:
         raise ValueError(f'rejects file missing application columns: {missing}')
-    present_forbidden = [c for c in forbidden_features if c in df.columns]
-    if present_forbidden:
+    # label_col is an outcome label, not a model feature — it is exempt
+    # from the forbidden-column check (e.g. a column literally named
+    # 'target' is the natural name for real reject outcomes).
+    blocked = [c for c in forbidden_features
+               if c in df.columns and c != label_col]
+    if blocked:
         raise ValueError(
-            f'rejects file contains post-origination columns: '
-            f'{present_forbidden}')
+            f'rejects file contains post-origination columns: {blocked}')
     return df
 
 

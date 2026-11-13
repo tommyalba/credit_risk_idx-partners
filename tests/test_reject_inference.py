@@ -109,6 +109,23 @@ def test_load_rejects_rejects_forbidden_columns(tmp_path):
         load_rejects(p, SCENARIO_A_FEATURE_COLUMNS, FORBIDDEN_FEATURES)
 
 
+def test_load_rejects_allows_label_col_named_target(tmp_path):
+    """A real-outcome column literally named 'target' is a label, not a
+    forbidden feature — the labeled augmentation path must accept it."""
+    df = _raw_frame(3)
+    df['target'] = [0, 1, 0]
+    p = tmp_path / 'rejects.csv'
+    df.to_csv(p, index=False)
+
+    out = load_rejects(p, SCENARIO_A_FEATURE_COLUMNS, FORBIDDEN_FEATURES,
+                       label_col='target')
+    assert 'target' in out.columns
+
+    # but without declaring it as the label, it is still rejected
+    with pytest.raises(ValueError, match='post-origination'):
+        load_rejects(p, SCENARIO_A_FEATURE_COLUMNS, FORBIDDEN_FEATURES)
+
+
 def test_load_rejects_rejects_missing_columns(tmp_path):
     df = _raw_frame(3).drop(columns=['annual_inc'])
     p = tmp_path / 'rejects.csv'

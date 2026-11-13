@@ -208,9 +208,13 @@ For a fresh agent session:
   given a rejects file it trains on funded loans plus rejects, using
   real outcome labels when available (`--label-col`) or model-PD fuzzy
   labels otherwise. What remains is the data itself — even a small
-  sample of rejected applications with bureau attributes. Until then
-  the sensitivity bounds in `experiments/reports/reject_inference.md` are the
-  honest statement of uncertainty.
+  sample of rejected applications with bureau attributes. The collection
+  spec (columns, labels, sample size, privacy) is in
+  `docs/reject_data_spec.md` with a working template at
+  `docs/rejects_template.csv`; both ingestion paths (fuzzy and
+  real-label) are smoke-tested end-to-end. Until then the sensitivity
+  bounds in `experiments/reports/reject_inference.md` are the honest
+  statement of uncertainty.
 - **Scheduled retraining.** Rolling-origin evaluation
   (`experiments/reports/rolling_oot_evaluation.md`) shows discrimination decays
   gradually (~0.004–0.006 AUC per quarter over 2011–2013) rather than

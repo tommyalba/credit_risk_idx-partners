@@ -1,14 +1,14 @@
 {
-  "rejects": "/tmp/rejects.csv",
-  "label_col": null,
-  "reject_weight": 1.0,
-  "n_rejects": 4000,
+  "rejects": "/tmp/rejects_smoke_labeled.csv",
+  "label_col": "target",
+  "reject_weight": 0.5,
+  "n_rejects": 500,
   "valid_auc_baseline": 0.6468036940629153,
-  "valid_auc_augmented": 0.6452093769497166,
+  "valid_auc_augmented": 0.645673494253705,
   "valid_logloss_baseline": 0.40244274308393846,
-  "valid_logloss_augmented": 0.40298316008461393,
+  "valid_logloss_augmented": 0.4032988711462073,
   "valid_mean_pd_baseline": 0.1545381949088037,
-  "valid_mean_pd_augmented": 0.15426954589274558,
+  "valid_mean_pd_augmented": 0.1554154471023876,
   "valid_bad_rate": 0.14798036995092487,
-  "elapsed_s": 18.5
+  "elapsed_s": 22.5
 }
