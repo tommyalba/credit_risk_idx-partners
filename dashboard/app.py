@@ -182,6 +182,13 @@ def render_applicant():
         st.markdown('**Top risk factors**: '
                     + ', '.join(f"{r.feature} ({r.direction})"
                                 for r in drivers.itertuples()))
+        from src.adverse_action import adverse_action_reasons
+        reasons = adverse_action_reasons(ind['table'], top_n=4)
+        if reasons:
+            st.markdown('**Suggested adverse-action reasons** '
+                        '(draft wording — confirm with compliance)')
+            for r in reasons:
+                st.markdown(f'- {r}')
     except Exception as e:
         st.warning(f'Explanation unavailable: {e}')
 

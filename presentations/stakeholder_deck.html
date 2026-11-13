@@ -575,10 +575,10 @@
   <h2 class="action-title">Three scoped next steps: reject data, live shadow validation, retraining automation</h2>
   <div class="grid g2 mt-l">
     <div class="card"><h4>1 · Reject-level data collection</h4><p class="dim" style="font-size:17px">Highest-value gap: turns bounded bias into measured bias. Reject-inference module already accepts augmented files.</p></div>
-    <div class="card"><h4>2 · Shadow-mode pilot</h4><p class="dim" style="font-size:17px">Score live applicants without acting; compare model PDs to realized outcomes, the missing live-portfolio validation.</p></div>
-    <div class="card"><h4>3 · Retraining automation</h4><p class="dim" style="font-size:17px">Gated retraining ships (<code>pipeline/retrain.py</code>); remaining work is scheduling it and wiring PSI alerts to trigger it early.</p></div>
+    <div class="card"><h4>2 · Shadow-mode pilot</h4><p class="dim" style="font-size:17px">Logging and reconciliation shipped (<code>pipeline/shadow.py</code>); remaining work is operational — score live applicants and wait for outcomes to mature.</p></div>
+    <div class="card"><h4>3 · Retraining automation</h4><p class="dim" style="font-size:17px"><code>retrain_watch.py</code> shipped: PSI drift check on shadow scores triggers the gated retrain; remaining work is installing the cron/systemd timer on the production host.</p></div>
   </div>
-  <p class="src">Source: README.md §Future directions · dashboard/app.py · autoresearch/program.md</p>
+  <p class="src">Source: README.md §Future directions · docs/ops_runbook.md · autoresearch/program.md</p>
   <div class="deck-footer"><span class="dim2">Next steps</span></div>
   <div class="notes">Ordered by value: reject data first; everything else is engineering.</div>
 </section>

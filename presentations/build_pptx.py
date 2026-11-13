@@ -569,14 +569,14 @@ notes(s, "Each ask maps to a documented finding. Don't ask for blanket approval.
 # --------------------------------------------------------- 24 Next steps
 s = new_slide("Next steps", "Three scoped next steps: reject data, live shadow validation, retraining automation")
 steps = [("1 · Reject-level data collection", "Highest-value gap: turns bounded bias into measured bias. Reject-inference module already accepts augmented files."),
-         ("2 · Shadow-mode pilot", "Score live applicants without acting; compare model PDs to realized outcomes, the missing live-portfolio validation."),
-         ("3 · Retraining automation", "Gated retraining ships (pipeline/retrain.py); remaining work is scheduling it and wiring PSI alerts to trigger it early.")]
+         ("2 · Shadow-mode pilot", "Logging and reconciliation shipped (pipeline/shadow.py); remaining work is operational — score live applicants and wait for outcomes to mature."),
+         ("3 · Retraining automation", "retrain_watch.py shipped: PSI drift check on shadow scores triggers the gated retrain; remaining work is installing the cron/systemd timer on the production host.")]
 cw = (SW - ML - MR - Inches(0.45) * 2) / 2
 for i, (t, b) in enumerate(steps):
     x = ML + (i % 2) * (cw + Inches(0.3))
     y = CONTENT_TOP + (i // 2) * (Inches(1.85) + Inches(0.25))
     card(s, x, y, cw, Inches(1.85), t, [[(b, 14, False, MUTE, False)]])
-src(s, "Source: README.md §Future directions · dashboard/app.py · autoresearch/program.md")
+src(s, "Source: README.md §Future directions · docs/ops_runbook.md · autoresearch/program.md")
 notes(s, "Ordered by value: reject data first; everything else is engineering.")
 
 # --------------------------------------------------------- 25 Conclusions

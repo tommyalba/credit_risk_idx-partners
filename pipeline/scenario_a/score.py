@@ -59,6 +59,9 @@ def main() -> None:
     ap.add_argument('--intervals', action='store_true',
                     help='add Venn-Abers PD intervals (slower on large '
                          'batches)')
+    ap.add_argument('--shadow', action='store_true',
+                    help='append inputs+scores to the shadow log '
+                         '(data/shadow/) for later outcome reconciliation')
     args = ap.parse_args()
 
     path = Path(args.input)
@@ -79,6 +82,11 @@ def main() -> None:
     if args.intervals:
         result = add_conformal_intervals(
             result, bundle, add_scenario_a_features, INTERIM_DIR)
+
+    if args.shadow:
+        from pipeline.shadow import record_scores
+        path = record_scores(df, result, 'a')
+        print(f'shadow log -> {path}')
 
     if args.output:
         result.to_csv(args.output, index=False)

@@ -20,6 +20,7 @@ Run:
     uvicorn pipeline.serve:app --host 0.0.0.0 --port 8000
 """
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -59,6 +60,22 @@ def _to_frame(payload) -> pd.DataFrame:
 
 def _records_out(df: pd.DataFrame) -> list:
     return df.reset_index(drop=True).to_dict(orient='records')
+
+
+def _shadow_log(df, res, scenario, score_col='pd_score',
+                decision_col='decision'):
+    """Append to the shadow log when SHADOW_DIR is configured."""
+    shadow_dir = os.environ.get('SHADOW_DIR')
+    if not shadow_dir:
+        return
+    try:
+        from pipeline.shadow import record_scores
+        path = record_scores(df, res, scenario, shadow_dir=shadow_dir,
+                             score_col=score_col,
+                             decision_col=decision_col)
+        logger.info('shadow log -> %s', path)
+    except Exception:
+        logger.exception('shadow logging failed')
 
 
 def _guard(fn, *args, **kwargs):
@@ -103,6 +120,7 @@ def create_app(bundle_a=None, bundle_b=None) -> FastAPI:
         df = _to_frame(await request.json())
         bundle = get('a')
         res = _guard(score_a.score, df, bundle=bundle)
+        _shadow_log(df, res, 'a')
         if intervals:
             res = _guard(add_conformal_intervals, res, bundle,
                          feat_a.add_scenario_a_features,
@@ -116,6 +134,12 @@ def create_app(bundle_a=None, bundle_b=None) -> FastAPI:
         result = _guard(lifecycle.score_lifecycle,
                         df, bundle_a=get('a'), bundle_b=get('b'),
                         intervals=intervals)
+        _shadow_log(df, result['scenario_a'], 'a',
+                    score_col='pd_score_application',
+                    decision_col='decision_application')
+        _shadow_log(df, result['scenario_b'], 'b',
+                    score_col='pd_score_funded',
+                    decision_col='decision_funded')
         return {'n': len(result['combined']),
                 'scores': _records_out(result['combined'])}
 

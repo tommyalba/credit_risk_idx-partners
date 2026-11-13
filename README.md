@@ -215,6 +215,12 @@ For a fresh agent session:
   real-label) are smoke-tested end-to-end. Until then the sensitivity
   bounds in `experiments/reports/reject_inference.md` are the honest
   statement of uncertainty.
+- **Retraining automation.** `pipeline/retrain_watch.py` runs the PSI
+  drift check on recent shadow scores (or any batch) and invokes the
+  gated retrain on a Significant verdict; exit codes suit cron/systemd
+  (`--auto-retrain` optional). Scheduling instructions are in
+  `docs/ops_runbook.md` — what remains is installing the timer on the
+  production host.
 - **Scheduled retraining.** Rolling-origin evaluation
   (`experiments/reports/rolling_oot_evaluation.md`) shows discrimination decays
   gradually (~0.004–0.006 AUC per quarter over 2011–2013) rather than
@@ -236,9 +242,17 @@ For a fresh agent session:
   bundle with per-record SHAP drivers (legacy nb3 scorecard kept in an
   expander for point-level adverse-action lookups); the batch tab covers
   scenario/lifecycle scoring, PSI drift, segment views, and global SHAP.
-  Remaining gap: SHAP directions are model explanations, not compliance
-  reason codes — validate wording before using them in adverse-action
-  notices.
+  Remaining gap: `src/adverse_action.py` maps SHAP drivers to
+  standardized reason phrases shown in the dashboard as draft
+  adverse-action reasons — the wording still needs compliance/legal
+  sign-off before use in formal notices.
+- **Shadow-mode pilot.** Machinery shipped (`pipeline/shadow.py`):
+  `--shadow` on the scoring CLIs and `SHADOW_DIR` on the API append
+  inputs+PDs to `data/shadow/`; `python -m pipeline.shadow report`
+  reconciles the log against realized outcomes (coverage, pd_gap, AUC,
+  calibration slope, ECE, bad-rate by decision). What remains is
+  operational: run it live and wait for the first outcome cohort to
+  mature (~12–24 months).
 - **Threshold governance.** The gap between statistical optima
   (τ ≈ 0.25) and deployed τ (≈ 0.28–0.29) should be an explicit risk-policy
   decision, revisited quarterly with fresh OOT data.

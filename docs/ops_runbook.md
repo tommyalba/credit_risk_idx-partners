@@ -49,6 +49,37 @@ validation vintage (bad rate 14.8%, approved-book bad rate 13.5% at τ).
 A mean-PD jump without a PSI verdict usually means the input mix changed
 in a way PSI bins don't capture.
 
+## Shadow mode (live-portfolio validation)
+
+Score live applicants without acting, then reconcile against realized
+outcomes once they mature. This is the validation the funded-only test
+split cannot provide.
+
+**Log** (pick one):
+- Batch CLI: `python -m pipeline.scenario_a.score live.csv --shadow`
+  (same for `scenario_b`; or `SHADOW_DIR=/path` env var)
+- API: set `SHADOW_DIR=data/shadow` before `uvicorn pipeline.serve:app`;
+  every scoring call is appended automatically (failures logged, never
+  block scoring)
+
+Rows land in `data/shadow/{scenario}_YYYY-MM.csv`: raw inputs +
+`scored_at`, `scenario`, `member_id`, `pd_score`, `decision`.
+
+**Reconcile** when outcomes exist (CSV/parquet with `member_id` +
+`target`, 1 = default):
+
+```bash
+python -m pipeline.shadow report --outcomes outcomes.csv
+python -m pipeline.shadow report --outcomes outcomes.csv --scenario b \
+    -o experiments/reports/shadow_report_b.json
+```
+
+The report gives coverage, realized bad rate vs mean PD (pd_gap), AUC /
+log-loss / Brier / KS, calibration slope + intercept + ECE, and
+bad-rate by decision band. Review monthly once the first cohort matures
+(~12–24 months for meaningful labels). A sustained `pd_gap` or ECE drift
+is the trigger for retraining (§ above).
+
 ## Retrain
 
 Cadence: semi-annual scheduled, or PSI-triggered early. The rolling-OOT
@@ -67,6 +98,31 @@ challenger OOT ROC-AUC must be >= incumbent − 0.005 (tune with
 `--min-auc-margin`). On gate failure the incumbent is restored
 automatically. Without `--promote` the gate verdict is reported but the
 live bundle stays put.
+
+### PSI-triggered early retraining
+
+`pipeline/retrain_watch.py` checks recent shadow scores (or any batch
+CSV) for drift and runs the gated retrain on a Significant verdict:
+
+```bash
+python -m pipeline.retrain_watch --scenario a --days 30
+python -m pipeline.retrain_watch --scenario a --auto-retrain   # act on Significant
+python -m pipeline.retrain_watch --scenario a --input batch.csv
+```
+
+Exit codes for schedulers: 0 = stable/moderate/no data, 2 = significant
+drift (alert), 1 = error. Suggested cron (daily):
+
+```
+0 6 * * * cd /path/to/credit_risk_modeling && \
+  python -m pipeline.retrain_watch --scenario a --auto-retrain \
+  >> logs/watch_a.log 2>&1
+# repeat for --scenario b
+```
+
+The retrain gate inside `pipeline.retrain` is the safety net — even an
+auto-triggered retrain cannot promote a challenger that regresses OOT
+AUC beyond the margin.
 
 After promotion: rerun `pytest tests/ -q`, commit the new
 `reports/scenario_*` artifacts, and note the change in the model card.
