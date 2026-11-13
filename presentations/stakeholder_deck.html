@@ -2,7 +2,7 @@
 <html lang="en" data-theme="corporate-clean">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Credit Risk Modeling — Stakeholder Results</title>
+<title>Credit Risk Modeling: Stakeholder Results</title>
 <link rel="stylesheet" href="assets/fonts.css">
 <link rel="stylesheet" href="assets/base.css">
 <link rel="stylesheet" id="theme-link" href="assets/themes/corporate-clean.css">
@@ -64,16 +64,16 @@
 <!-- 2. Business problem -->
 <section class="slide" data-title="The decision, not the metric">
   <p class="kicker">Context</p>
-  <h2 class="action-title">Lenders need calibrated default probabilities at two decision points — not just a ranking</h2>
+  <h2 class="action-title">Lenders need calibrated default probabilities at two decision points</h2>
   <div class="two-col mt-l">
     <div class="card">
-      <h4>Decision 1 — Approve or reject (before funding)</h4>
+      <h4>Decision 1: Approve or reject (before funding)</h4>
       <p class="dim" style="font-size:16px">Every applicant needs a probability of default <em>before</em> money moves.
       A score that only ranks well is not enough: pricing, limits, and fair-lending review all need
       probabilities that mean what they say.</p>
     </div>
     <div class="card">
-      <h4>Decision 2 — Monitor the funded book (after origination)</h4>
+      <h4>Decision 2: Monitor the funded book (after origination)</h4>
       <p class="dim" style="font-size:16px">Once funded, pricing and loan-structure fields exist.
       The book needs re-scoring as vintages age, with drift detection when the world changes.</p>
     </div>
@@ -95,7 +95,7 @@
       <p class="kicker">Scenario A · application-time</p>
       <h3 style="margin-top:8px">Approve / reject</h3>
       <ul class="tight">
-        <li><strong>14 features</strong> — bureau, demographic, derived (credit age, DTI, LTI)</li>
+        <li><strong>14 features</strong>: bureau, demographic, derived (credit age, DTI, LTI)</li>
         <li>Uses only what an applicant tells you and the bureau reports</li>
         <li>Hard-blocks funding, repayment, and collection fields</li>
         <li><span class="tag">OOT AUC 0.644</span> <span class="tag">τ = 0.288</span></li>
@@ -105,7 +105,7 @@
       <p class="kicker">Scenario B · post-origination</p>
       <h3 style="margin-top:8px">Funded-book monitoring</h3>
       <ul class="tight">
-        <li><strong>28 features</strong> — Scenario A set + grade, int_rate, installment, funded_amnt</li>
+        <li><strong>28 features</strong>: Scenario A set + grade, int_rate, installment, funded_amnt</li>
         <li>Scoring entry point <em>rejects</em> payloads containing repayment/collection fields</li>
         <li>Same shared engine (<code>pipeline/core.py</code>), separate feature contract</li>
         <li><span class="tag">OOT AUC 0.669</span> <span class="tag">τ = 0.282</span></li>
@@ -122,7 +122,7 @@
   <p class="kicker">Data</p>
   <h2 class="action-title">117,841 mature loans, labeled GOOD/BAD by a 33-month performance window and split forward in time</h2>
   <div class="grid g4 mt-l" style="margin-top:30px">
-    <div class="card center"><div class="kpi">466k</div><div class="kpi-label">raw loan records (2007–2014)</div></div>
+    <div class="card center"><div class="kpi">466k</div><div class="kpi-label">raw loan records (2007-2014)</div></div>
     <div class="card center"><div class="kpi">117,841</div><div class="kpi-label">usable after maturity filter</div></div>
     <div class="card center"><div class="kpi">3</div><div class="kpi-label">temporal splits, never shuffled</div></div>
     <div class="card center"><div class="kpi">~15%</div><div class="kpi-label">bad (default) rate</div></div>
@@ -135,7 +135,7 @@
   </table>
   <p class="src">Source: reports/scenario_a_model_card.md §Data &amp; splits · src/performance_window.py (M=33)</p>
   <div class="deck-footer"><span class="dim2">Situation</span></div>
-  <div class="notes">The OOT quarter is genuinely future data — the honest evaluation most projects skip.</div>
+  <div class="notes">The OOT quarter is genuinely future data, the honest evaluation most projects skip.</div>
 </section>
 
 <!-- 5. Pipeline -->
@@ -160,20 +160,20 @@
   </div>
   <p class="src">Source: docs/method.md · pipeline/core.py · pipeline/{scenario_a,scenario_b}/</p>
   <div class="deck-footer"><span class="dim2">What was built</span></div>
-  <div class="notes">Emphasize: one shared engine, scenario wrappers pass a spec — new scenarios extend, not copy.</div>
+  <div class="notes">Emphasize: one shared engine, scenario wrappers pass a spec: new scenarios extend, not copy.</div>
 </section>
 
 <!-- 6. Leakage -->
 <section class="slide" data-title="Leakage is prevented by contract">
   <p class="kicker">Trust</p>
-  <h2 class="action-title">Forbidden features are rejected by the pipeline itself — analysts can't leak them by mistake</h2>
+  <h2 class="action-title">Forbidden features are rejected by the pipeline itself, so analysts can't leak them by mistake</h2>
   <div class="grid g2 mt-l">
     <div class="card">
       <h4>What never enters a model</h4>
       <ul class="tight">
         <li>Repayment outcomes: <code>recoveries</code>, <code>out_prncp</code>, <code>total_pymnt</code>, <code>last_pymnt_*</code></li>
         <li>Collection fields: <code>collection_recovery_fee</code>, <code>pymnt_plan</code></li>
-        <li>Scenario A additionally excludes all funding/pricing fields</li>
+        <li>Scenario A also excludes all funding/pricing fields</li>
       </ul>
     </div>
     <div class="card">
@@ -182,7 +182,7 @@
         <li><code>FORBIDDEN_FEATURES</code> lists live in each scenario's <code>features.py</code></li>
         <li>Scenario B scorer <strong>hard-rejects</strong> payloads containing blocked columns</li>
         <li><code>pipeline/infer.py</code> strips them per scenario when routing one record</li>
-        <li>Calibration and τ are chosen on validation — the OOT test set is touched once</li>
+        <li>Calibration and τ are chosen on validation; the OOT test set is touched once</li>
       </ul>
     </div>
   </div>
@@ -195,7 +195,7 @@
 <!-- 7. Model selection -->
 <section class="slide" data-title="CatBoost won; the margin was honest">
   <p class="kicker">Model selection</p>
-  <h2 class="action-title">CatBoost won both scenarios — and the alternatives were close enough that ensembles added nothing</h2>
+  <h2 class="action-title">CatBoost won both scenarios. The alternatives were close enough that ensembles added nothing.</h2>
   <table class="tbl mt-l">
     <tr><th>Model</th><th class="num">A · valid AUC</th><th class="num">A · OOT AUC</th><th class="num">B · valid AUC</th><th class="num">B · OOT AUC</th></tr>
     <tr><td><strong>CatBoost</strong></td><td class="num win">0.6468</td><td class="num win">0.6442</td><td class="num win">0.6684</td><td class="num win">0.6687</td></tr>
@@ -203,13 +203,13 @@
     <tr><td>LightGBM</td><td class="num">0.6456</td><td class="num">0.6436</td><td class="num">0.6658</td><td class="num">0.6687</td></tr>
   </table>
   <div class="grid g3 mt-l">
-    <div class="card"><h4>Calibration: raw wins</h4><p class="dim" style="font-size:15px">CatBoost probabilities needed no recalibration — sigmoid/isotonic tested on validation Brier, raw kept.</p></div>
+    <div class="card"><h4>Calibration: raw wins</h4><p class="dim" style="font-size:15px">CatBoost probabilities needed no recalibration. Sigmoid and isotonic were tested on validation Brier; raw kept.</p></div>
     <div class="card"><h4>Threshold: expected cost</h4><p class="dim" style="font-size:15px">τ minimizes expected loss (FN cost ≈ 8.25M vs FP ≈ 2.7M IDR), not accuracy.</p></div>
-    <div class="card"><h4>Ensembles: tested, rejected</h4><p class="dim" style="font-size:15px">Soft-vote and stacking evaluated — differences within noise, single CatBoost shipped.</p></div>
+    <div class="card"><h4>Ensembles: tested, rejected</h4><p class="dim" style="font-size:15px">Soft-vote and stacking evaluated; differences were within noise, so a single CatBoost shipped.</p></div>
   </div>
   <p class="src">Source: reports/scenario_{a,b}_leaderboard.csv · reports/scenario_{a,b}_metrics.json</p>
   <div class="deck-footer"><span class="dim2">What was built</span></div>
-  <div class="notes">Key point: differences are ~0.002-0.003 AUC — honest reporting, no overselling.</div>
+  <div class="notes">Key point: differences are ~0.002-0.003 AUC. Honest reporting, no overselling.</div>
 </section>
 
 <!-- 8. Scenario A results -->
@@ -233,19 +233,19 @@
       </div>
       <div class="card mt-m">
         <h4>Reproduces the notebook baseline</h4>
-        <p class="dim" style="font-size:15px">Pipeline output matches nb4/autoresearch CatBoost to six decimals — the .py pipeline is verified against the research code.</p>
+        <p class="dim" style="font-size:15px">Pipeline output matches nb4/autoresearch CatBoost to six decimals, so the .py pipeline is verified against the research code.</p>
       </div>
     </div>
   </div>
   <p class="src">Source: reports/scenario_a_metrics.json · reports/scenario_a_model_card.md</p>
   <div class="deck-footer"><span class="dim2">Results · A</span></div>
-  <div class="notes">Modest AUC is honest — application-time features are limited. Stability valid→OOT is the story.</div>
+  <div class="notes">Modest AUC is honest; application-time features are limited. Stability valid→OOT is the story.</div>
 </section>
 
 <!-- 9. Scenario B results -->
 <section class="slide" data-title="Scenario B: pricing data adds real signal">
   <p class="kicker">Results · Scenario B</p>
-  <h2 class="action-title">Adding funding and pricing fields lifts OOT AUC to 0.669 — the strongest model in the project</h2>
+  <h2 class="action-title">Adding funding and pricing fields lifts OOT AUC to 0.669, the strongest result in the project</h2>
   <div class="grid" style="grid-template-columns:1.2fr 1fr;gap:28px;margin-top:26px">
     <table class="tbl">
       <tr><th>Metric</th><th class="num">Validation</th><th class="num">OOT (2013Q1)</th></tr>
@@ -262,45 +262,45 @@
         <p class="dim" style="font-size:15px">Expected-cost threshold, same methodology as Scenario A.</p>
       </div>
       <div class="callout good mt-m" style="font-size:16px">
-        OOT AUC <strong>higher</strong> than validation — the model generalizes, not degrades, on the future quarter.
+        OOT AUC <strong>higher</strong> than validation: the model generalizes rather than degrades on the future quarter.
       </div>
     </div>
   </div>
   <p class="src">Source: reports/scenario_b_metrics.json · reports/scenario_b_model_card.md</p>
   <div class="deck-footer"><span class="dim2">Results · B</span></div>
-  <div class="notes">Grade/int_rate/installment carry signal — that's why B beats A. This is the monitoring model.</div>
+  <div class="notes">Grade/int_rate/installment carry signal, which is why B beats A. This is the monitoring model.</div>
 </section>
 
 <!-- 10. Rolling OOT -->
 <section class="slide" data-title="Performance decays gradually, not suddenly">
   <p class="kicker">Robustness</p>
-  <h2 class="action-title">Rolling-origin evaluation shows gradual drift — a scheduled retraining cadence is sufficient</h2>
+  <h2 class="action-title">Rolling-origin evaluation shows gradual drift, so a scheduled retraining cadence is sufficient</h2>
   <div class="grid" style="grid-template-columns:1.5fr 1fr;gap:28px;margin-top:18px;align-items:center">
     <figure class="img-frame contain" style="--img-ratio:16/9"><img src="figures/rolling_oot_auc.png" alt="Rolling OOT AUC by quarter"></figure>
     <ul class="tight">
-      <li>Refit on expanding window, score the <strong>next quarter</strong> — 16 windows per scenario</li>
-      <li>Expect OOT AUC <strong>~0.64–0.67</strong> on future vintages; the 2010 peak is not recoverable</li>
-      <li>Bad rates drift with Lending Club's book growth — PSI monitoring is designed for exactly this</li>
-      <li>Full run &lt; 5 min per scenario — cheap validation before promoting any retrained bundle</li>
+      <li>Refit on expanding window, score the <strong>next quarter</strong>: 16 windows per scenario</li>
+      <li>Expect OOT AUC <strong>~0.64-0.67</strong> on future vintages; the 2010 peak is not recoverable</li>
+      <li>Bad rates drift with Lending Club's book growth, which is what PSI monitoring is designed to catch</li>
+      <li>Full run &lt; 5 min per scenario: cheap validation before promoting any retrained bundle</li>
     </ul>
   </div>
   <p class="src">Source: experiments/reports/rolling_oot_evaluation.md · rolling_oot_{a,b}.csv</p>
   <div class="deck-footer"><span class="dim2">Robustness</span></div>
-  <div class="notes">This answers "is 0.644 a lucky quarter?" — no, it's the honest range across many quarters.</div>
+  <div class="notes">This answers "is 0.644 a lucky quarter?" No, it's the honest range across many quarters.</div>
 </section>
 
 <!-- 11. Calibration -->
 <section class="slide" data-title="Probabilities mean what they say">
   <p class="kicker">Calibration</p>
-  <h2 class="action-title">Raw CatBoost probabilities are already well-calibrated — extra recalibration was tested and rejected</h2>
+  <h2 class="action-title">Raw CatBoost probabilities are already well-calibrated; extra recalibration was tested and rejected</h2>
   <div class="grid g3 mt-l">
     <div class="card center"><div class="kpi" style="font-size:40px">0.897 / 0.881</div><div class="kpi-label">calibration slope, valid / OOT (1.0 = perfect)</div></div>
     <div class="card center"><div class="kpi" style="font-size:40px">0.013 / 0.019</div><div class="kpi-label">ECE, valid / OOT (expected calibration error)</div></div>
-    <div class="card center"><div class="kpi" style="font-size:40px">raw</div><div class="kpi-label">winning calibration — sigmoid &amp; isotonic lost on Brier</div></div>
+    <div class="card center"><div class="kpi" style="font-size:40px">raw</div><div class="kpi-label">winning calibration: sigmoid &amp; isotonic lost on Brier</div></div>
   </div>
   <div class="callout mt-l" style="font-size:17px">
     <strong>Per-vintage recalibration hurts.</strong> 16 quarterly windows tested: refit calibrators on the adjusted tail
-    <em>worsened</em> ECE and Brier — raw ECE ≈ 0.02 is already good. Recalibrate only at scheduled retraining, not continuously.
+    <em>worsened</em> ECE and Brier. Raw ECE ≈ 0.02 is already good. Recalibrate only at scheduled retraining, not continuously.
   </div>
   <p class="src">Source: experiments/reports/calibration_slope.{csv,md} · recalibration_drift_{a,b}.csv</p>
   <div class="deck-footer"><span class="dim2">Calibration</span></div>
@@ -310,7 +310,7 @@
 <!-- 12. Threshold -->
 <section class="slide" data-title="The threshold is robust; the policy is what matters">
   <p class="kicker">Decision threshold</p>
-  <h2 class="action-title">τ is statistically stable (95% CI ±0.05) — but the real uncertainty is population bias, not sampling noise</h2>
+  <h2 class="action-title">τ is statistically stable (95% CI ±0.05), but the bigger uncertainty is population bias rather than sampling noise</h2>
   <div class="grid" style="grid-template-columns:1fr 1.2fr;gap:28px;margin-top:22px">
     <table class="tbl">
       <tr><th>Scenario</th><th class="num">τ deployed</th><th class="num">Bootstrap 95% CI</th><th class="num">Regret (mean)</th></tr>
@@ -321,44 +321,44 @@
       <div class="card"><h4>Cost curve is flat near τ</h4><p class="dim" style="font-size:15px">±0.05 deviation changes expected cost by ~2%; p90 regret ~1.2% of minimum.</p></div>
       <div class="callout warn mt-m" style="font-size:16px">
         <strong>Governance implication:</strong> τ needs <em>policy</em> control, not statistical control.
-        The binding constraint is reject-inference bias (next slide) — an order of magnitude larger effect.
+        The binding constraint is reject-inference bias (next slide), an order of magnitude larger effect.
       </div>
     </div>
   </div>
   <p class="src">Source: experiments/reports/threshold_ci.md · threshold_ci.csv (500 bootstrap resamples)</p>
   <div class="deck-footer"><span class="dim2">Threshold</span></div>
-  <div class="notes">500 bootstraps. Deployed τ sits inside the CI — keep it, revisit at retraining cadence.</div>
+  <div class="notes">500 bootstraps. Deployed τ sits inside the CI. Keep it and revisit at the retraining cadence.</div>
 </section>
 
 <!-- 13. Reject inference -->
 <section class="slide" data-title="Funded-loan PDs are optimistic for the applicant pool">
   <p class="kicker">Known bias · selection</p>
-  <h2 class="action-title">Trained only on funded loans, the model likely overstates applicant quality — bounded, not hidden</h2>
+  <h2 class="action-title">Trained only on funded loans, the model likely overstates applicant quality, and the size of that bias is bounded</h2>
   <div class="grid g3 mt-l">
-    <div class="card center"><div class="kpi" style="font-size:40px">1.4–1.9×</div><div class="kpi-label">plausible true applicant-pool PD vs funded-book PD</div></div>
-    <div class="card center"><div class="kpi" style="font-size:40px">0.12–0.18</div><div class="kpi-label">oracle τ under plausible assumptions vs deployed 0.288</div></div>
-    <div class="card center"><div class="kpi" style="font-size:40px">none</div><div class="kpi-label">reject labels exist — strict reject inference is impossible</div></div>
+    <div class="card center"><div class="kpi" style="font-size:40px">1.4-1.9×</div><div class="kpi-label">plausible true applicant-pool PD vs funded-book PD</div></div>
+    <div class="card center"><div class="kpi" style="font-size:40px">0.12-0.18</div><div class="kpi-label">oracle τ under plausible assumptions vs deployed 0.288</div></div>
+    <div class="card center"><div class="kpi" style="font-size:40px">none</div><div class="kpi-label">reject labels exist, so strict reject inference is impossible</div></div>
   </div>
   <div class="callout bad mt-l" style="font-size:17px">
     <strong>What this means:</strong> absolute PDs are conditional on funding. A predicted 15% means "15% of similar
-    <em>funded</em> loans default" — the true applicant pool defaults more often. Direction and rough magnitude are
+    <em>funded</em> loans default". The true applicant pool defaults more often. Direction and rough magnitude are
     quantified; exact calibration needs reject-level data.
   </div>
   <p class="src">Source: experiments/reports/reject_inference.md · reject_inference_results.csv</p>
   <div class="deck-footer"><span class="dim2">Known bias</span></div>
-  <div class="notes">This is the most important caveat in the deck. Sensitivity analysis, not an estimate — say it plainly.</div>
+  <div class="notes">This is the most important caveat in the deck. Sensitivity analysis, not an estimate. Say it plainly.</div>
 </section>
 
 <!-- 14. Fairness -->
 <section class="slide" data-title="Fairness screening flagged three segments">
   <p class="kicker">Fairness</p>
-  <h2 class="action-title">Adverse-impact screening flagged 60-month terms, small_business, and top-LTI borrowers — income is clean</h2>
+  <h2 class="action-title">Adverse-impact screening flagged 60-month terms, small_business, and top-LTI borrowers; income is clean</h2>
   <table class="tbl mt-l" style="max-width:1000px">
     <tr><th>Screen</th><th>Flag</th><th>Detail</th><th>Action</th></tr>
     <tr><td>Adverse impact (AIR &lt; 0.80)</td><td class="win">60-mo term · small_business · top LTI tercile</td><td>Approval-rate disparity vs reference</td><td>Monitor; document</td></tr>
     <tr><td>Calibration parity</td><td class="win">small_business under-predicts ~5pp</td><td>Predicted PD too low vs observed</td><td>Segment review</td></tr>
     <tr><td>Calibration parity</td><td class="win">60-mo term over-predicts ~6pp OOT</td><td>Predicted PD too high vs observed</td><td>Segment review</td></tr>
-    <tr><td>Income</td><td>—</td><td>No adverse impact detected</td><td>None</td></tr>
+    <tr><td>Income</td><td>None</td><td>No adverse impact detected</td><td>None</td></tr>
   </table>
   <p class="dim" style="font-size:16px;margin-top:14px">
     AIR tests whether the <em>decision</em> treats segments equally; calibration parity tests whether a predicted PD
@@ -366,13 +366,13 @@
   </p>
   <p class="src">Source: experiments/reports/adverse_impact.csv · calibration_parity.{csv,md}</p>
   <div class="deck-footer"><span class="dim2">Fairness</span></div>
-  <div class="notes">Both tests, not just one. Flags are monitoring items, not proven discrimination — be precise.</div>
+  <div class="notes">Both tests ran. Flags are monitoring items, not proven discrimination. Be precise.</div>
 </section>
 
 <!-- 15. SHAP -->
 <section class="slide" data-title="Every score is explainable">
   <p class="kicker">Explainability</p>
-  <h2 class="action-title">SHAP explanations work at portfolio and individual-loan level — decline reasons are defensible</h2>
+  <h2 class="action-title">SHAP explanations work at portfolio and individual-loan level, so decline reasons are defensible</h2>
   <div class="grid" style="grid-template-columns:1.4fr 1fr;gap:28px;margin-top:20px;align-items:center">
     <figure class="img-frame contain" style="--img-ratio:4/3"><img src="figures/shap_summary_global.png" alt="SHAP global importance"></figure>
     <ul class="tight">
@@ -395,7 +395,7 @@
     <div class="card">
       <h4>How it works</h4>
       <ul class="tight">
-        <li>Isotonic calibration fit twice on the 10,596-loan validation set — label forced 0, then 1</li>
+        <li>Isotonic calibration fit twice on the 10,596-loan validation set, with the label forced to 0 and then to 1</li>
         <li>Interval <code>[min(p0,p1), max(p0,p1)]</code> brackets a calibrated probability per loan</li>
         <li>Wired into scoring: <code>--intervals</code> on <code>score.py</code> and <code>infer.py</code></li>
         <li>Distribution-free coverage guarantees under exchangeability</li>
@@ -412,19 +412,19 @@
   </div>
   <p class="src">Source: experiments/reports/conformal_coverage.md · src/conformal.py</p>
   <div class="deck-footer"><span class="dim2">Uncertainty</span></div>
-  <div class="notes">Novel-ish capability most credit shops don't have. Brief — technical audience gets it.</div>
+  <div class="notes">Novel-ish capability most credit shops don't have. Keep it brief; the technical audience will get it.</div>
 </section>
 
 <!-- 17. PSI -->
 <section class="slide" data-title="The system watches itself">
   <p class="kicker">Monitoring</p>
-  <h2 class="action-title">Every scoring batch emits a PSI drift report — per-feature and score-distribution, with a verdict</h2>
+  <h2 class="action-title">Every scoring batch emits a PSI drift report covering per-feature and score-distribution drift, with a verdict</h2>
   <div class="grid g2 mt-l">
     <div class="card">
       <h4>What is monitored</h4>
       <ul class="tight">
         <li>Characteristic PSI per feature vs reference distribution</li>
-        <li>Score-distribution PSI — is the book's risk mix shifting?</li>
+        <li>Score-distribution PSI: is the book's risk mix shifting?</li>
         <li>Overall verdict: <strong>Stable / Moderate / Significant</strong></li>
         <li>Natural-sort bin ordering (audit fix) so drift localizes correctly</li>
       </ul>
@@ -432,7 +432,7 @@
     <div class="card">
       <h4>Why it matters now</h4>
       <ul class="tight">
-        <li>Rolling evaluation proved drift is <em>gradual</em> — exactly what PSI catches early</li>
+        <li>Rolling evaluation proved drift is <em>gradual</em> , which is what PSI catches early</li>
         <li>Triggers the scheduled retraining cadence before AUC degrades visibly</li>
         <li>Regression test: shifted-feature fixture produces material PSI + non-stable verdict</li>
       </ul>
@@ -440,7 +440,7 @@
   </div>
   <p class="src">Source: src/population_stability_index.py · pipeline/scenario_{a,b}/score.py --psi · docs/method.md</p>
   <div class="deck-footer"><span class="dim2">Monitoring</span></div>
-  <div class="notes">Monitoring is a feature, not an afterthought — it closes the loop with the drift finding.</div>
+  <div class="notes">Monitoring is a feature, not an afterthought; it closes the loop with the drift finding.</div>
 </section>
 
 <!-- 18. Reproducibility -->
@@ -449,13 +449,13 @@
   <h2 class="action-title">DVC-tracked artifacts, a manifest of environment and hashes, MLflow runs, and a 48-test suite</h2>
   <div class="grid g4 mt-l">
     <div class="card"><h4>DVC</h4><p class="dim" style="font-size:15px">Data, interim frames, and model bundles versioned; local remote pushed.</p></div>
-    <div class="card"><h4>manifest.json</h4><p class="dim" style="font-size:15px">Environment versions, split config, artifact hashes — any bundle is auditable.</p></div>
+    <div class="card"><h4>manifest.json</h4><p class="dim" style="font-size:15px">Environment versions, split config, artifact hashes, so any bundle is auditable.</p></div>
     <div class="card"><h4>MLflow</h4><p class="dim" style="font-size:15px">Experiment tracking with sqlite backend; runs comparable across retrains.</p></div>
     <div class="card"><h4>48 tests</h4><p class="dim" style="font-size:15px">pytest green: pipelines, metrics, PSI, conformal, reject-inference, threshold math.</p></div>
   </div>
   <div class="callout good mt-l" style="font-size:17px">
-    Scenario A pipeline reproduces the research notebook's CatBoost to <strong>six decimals</strong> —
-    production code and research code are provably the same model.
+    Scenario A pipeline reproduces the research notebook's CatBoost to <strong>six decimals</strong>.
+    Production code and research code are provably the same model.
   </div>
   <p class="src">Source: README.md · docs/reproduce.md · artifacts/manifest.json · tests/</p>
   <div class="deck-footer"><span class="dim2">Engineering</span></div>
@@ -465,12 +465,12 @@
 <!-- 19. Hazard -->
 <section class="slide" data-title="A hazard model exists as a documented v2">
   <p class="kicker">v2 candidate</p>
-  <h2 class="action-title">The survival model produces PD-as-a-function-of-time — valuable, but it trails on discrimination</h2>
+  <h2 class="action-title">The survival model produces PD-as-a-function-of-time but trails on discrimination</h2>
   <div class="grid" style="grid-template-columns:1.4fr 1fr;gap:28px;margin-top:20px;align-items:center">
     <figure class="img-frame contain" style="--img-ratio:16/9"><img src="figures/hazard_pd_t.png" alt="Hazard PD(t) curves by decile"></figure>
     <ul class="tight">
       <li>Discrete-time hazard h(t|x) → survival curve → <strong>PD(t) per loan</strong></li>
-      <li>OOT AUC <strong>0.637</strong> vs CatBoost 0.644 — documented, not promoted</li>
+      <li>OOT AUC <strong>0.637</strong> vs CatBoost 0.644; documented, not promoted</li>
       <li>Expected-loss term structure peaks around month 11; median time-to-event 17mo</li>
       <li>Right tool if the business needs lifetime EL, cross-sell windows, or horizon-specific triggers</li>
     </ul>
@@ -483,7 +483,7 @@
 <!-- 20. Limitations -->
 <section class="slide" data-title="The limits are documented, not hidden">
   <p class="kicker">Honesty</p>
-  <h2 class="action-title">Five known limitations — each with a mitigation already in place or scoped</h2>
+  <h2 class="action-title">Five known limitations, each with a mitigation in place or scoped</h2>
   <div class="grid g2 mt-l">
     <div class="card"><h4>Single OOT quarter (2013Q1)</h4><p class="dim" style="font-size:15px">Mitigated by rolling-origin evaluation across 16 quarters.</p></div>
     <div class="card"><h4>Funded-loan selection bias</h4><p class="dim" style="font-size:15px">Bounded by sensitivity analysis; needs reject-level data to resolve.</p></div>
@@ -493,18 +493,18 @@
     <div class="card"><h4>Segment exceptions</h4><p class="dim" style="font-size:15px">small_business under-prediction and 60-mo over-prediction flagged for review.</p></div>
   </div>
   <div class="deck-footer"><span class="dim2">Honesty</span></div>
-  <div class="notes">Naming limits builds credibility. Each has a next step — see slide 24.</div>
+  <div class="notes">Naming limits builds credibility. Each has a next step; see the next-steps slide.</div>
 </section>
 
 <!-- 21. Rejected alternatives -->
 <section class="slide" data-title="The rejected paths were tested, not assumed">
   <p class="kicker">Negative results</p>
-  <h2 class="action-title">Class imbalance fixes, alternative representations, and ensembles were all tried — none beat raw CatBoost</h2>
+  <h2 class="action-title">Class imbalance fixes, alternative representations, and ensembles were all tried; none beat raw CatBoost</h2>
   <table class="tbl mt-l">
     <tr><th>Experiment</th><th>Result</th><th>Decision</th></tr>
     <tr><td>SMOTENC oversampling</td><td class="num">AUC −0.006 to −0.020, monotonic harm</td><td>Rejected</td></tr>
     <tr><td>Random undersampling</td><td class="num">RUS-30 wrecks log loss; RUS-20 +0.0003 (noise)</td><td>Rejected</td></tr>
-    <tr><td>Count-feature re-expression (raw / two-part)</td><td class="num">+0.0018 valid AUC — within noise margin</td><td>Discarded</td></tr>
+    <tr><td>Count-feature re-expression (raw / two-part)</td><td class="num">+0.0018 valid AUC, within the noise margin</td><td>Discarded</td></tr>
     <tr><td>mths_since_last_* features + LR interactions</td><td class="num">+0.0014 valid, flat OOT; interactions nil</td><td>Rejected</td></tr>
     <tr><td>Soft-vote / stacking ensembles</td><td class="num">Differences within noise</td><td>Single CatBoost</td></tr>
     <tr><td>Per-vintage recalibration</td><td class="num">Worsens ECE and Brier</td><td>Recal only at retrain</td></tr>
@@ -518,7 +518,7 @@
 <!-- 22. Recommendation -->
 <section class="slide" data-title="Deploy both, each in its lane">
   <p class="kicker">Recommendation</p>
-  <h2 class="action-title">Deploy Scenario A for approve/reject decisions and Scenario B for funded-book monitoring — as a pilot</h2>
+  <h2 class="action-title">Deploy Scenario A for approve/reject decisions and Scenario B for funded-book monitoring, starting with a pilot</h2>
   <div class="grid g2 mt-l">
     <div class="card card-accent">
       <h4>Scenario A → origination</h4>
@@ -543,7 +543,7 @@
     Both bundles reproduce with <code>python -m pipeline.scenario_{a,b}.train</code>; unified scoring via <code>pipeline/infer.py</code>.
   </div>
   <div class="deck-footer"><span class="dim2">Recommendation</span></div>
-  <div class="notes">Concrete deployment shape. Pilot, not big-bang — shadow mode alongside existing process first.</div>
+  <div class="notes">Concrete deployment shape. Pilot, not big-bang: shadow mode alongside the existing process first.</div>
 </section>
 
 <!-- 23. Decisions -->
@@ -552,17 +552,17 @@
   <h2 class="action-title">Stakeholders must decide: how to handle reject-data bias, τ governance, and retraining cadence</h2>
   <div class="stack mt-l" style="max-width:1100px">
     <div class="card"><h4>1 · Reject-level data</h4>
-      <p class="dim" style="font-size:16px">Accept funded-conditional PDs with documented bounds (1.4–1.9×, oracle τ 0.12–0.18),
+      <p class="dim" style="font-size:16px">Accept funded-conditional PDs with documented bounds (1.4-1.9×, oracle τ 0.12-0.18),
       or invest in collecting/scoring rejected applicants to close the gap.</p></div>
     <div class="card"><h4>2 · τ governance</h4>
       <p class="dim" style="font-size:16px">Approve the expected-cost τ policy (C_FN ≈ 8.25M vs C_FP ≈ 2.7M IDR) and its
-      review cadence — statistical uncertainty is small; policy risk is not.</p></div>
+      review cadence. Statistical uncertainty is small; policy risk is not.</p></div>
     <div class="card"><h4>3 · Retraining cadence</h4>
-      <p class="dim" style="font-size:16px">Approve scheduled retraining (~semi-annual, PSI-triggered early) —
-      rolling evaluation shows gradual drift, not abrupt breaks.</p></div>
+      <p class="dim" style="font-size:16px">Approve scheduled retraining (~semi-annual, PSI-triggered early).
+      Rolling evaluation shows gradual drift, not abrupt breaks.</p></div>
   </div>
   <div class="deck-footer"><span class="dim2">Asks</span></div>
-  <div class="notes">Each ask maps to a documented finding. Don't ask for blanket approval — ask for three decisions.</div>
+  <div class="notes">Each ask maps to a documented finding. Don't ask for blanket approval. Ask for three decisions.</div>
 </section>
 
 <!-- 24. Next steps -->
@@ -571,20 +571,20 @@
   <h2 class="action-title">Four scoped next steps: reject data, live shadow validation, dashboard, retraining automation</h2>
   <div class="grid g2 mt-l">
     <div class="card"><h4>1 · Reject-level data collection</h4><p class="dim" style="font-size:15px">Highest-value gap: turns bounded bias into measured bias. Reject-inference module already accepts augmented files.</p></div>
-    <div class="card"><h4>2 · Shadow-mode pilot</h4><p class="dim" style="font-size:15px">Score live applicants without acting; compare model PDs to realized outcomes — the missing live-portfolio validation.</p></div>
+    <div class="card"><h4>2 · Shadow-mode pilot</h4><p class="dim" style="font-size:15px">Score live applicants without acting; compare model PDs to realized outcomes, the missing live-portfolio validation.</p></div>
     <div class="card"><h4>3 · Streamlit decision dashboard</h4><p class="dim" style="font-size:15px">Scaffold exists; wire to <code>pipeline/infer.py</code> + SHAP for a business-facing UI.</p></div>
     <div class="card"><h4>4 · Retraining automation</h4><p class="dim" style="font-size:15px">Rolling-OOT harness is the promotion gate; PSI triggers; MLflow tracks each retrain.</p></div>
   </div>
   <p class="src">Source: README.md §Future directions · dashboard/app.py · autoresearch/program.md</p>
   <div class="deck-footer"><span class="dim2">Next steps</span></div>
-  <div class="notes">Ordered by value: reject data first — everything else is engineering.</div>
+  <div class="notes">Ordered by value: reject data first; everything else is engineering.</div>
 </section>
 
 <!-- 25. Conclusions -->
 <section class="slide center tc" data-title="Conclusions">
   <div>
     <p class="kicker">Conclusions</p>
-    <h1 class="h1" style="font-size:52px">Two validated models.<br>Honest about their limits.<br>Ready for pilot.</h1>
+    <h1 class="h1" style="font-size:44px">Two validated models, honest about their limits,<br>ready for pilot.</h1>
     <div class="grid g3 mt-l" style="max-width:1200px;margin:30px auto 0;text-align:left">
       <div class="card"><h4>Scenario A</h4><p class="dim" style="font-size:15px">AUC 0.644 OOT · τ 0.288 · approve/reject</p></div>
       <div class="card"><h4>Scenario B</h4><p class="dim" style="font-size:15px">AUC 0.669 OOT · τ 0.282 · book monitoring</p></div>
@@ -613,7 +613,7 @@
   <h2 class="action-title">Full OOT metrics for both production bundles</h2>
   <div class="grid g2 mt-l">
     <div>
-      <h4 style="color:var(--accent)">Scenario A — CatBoost, raw calibration, τ = 0.2883</h4>
+      <h4 style="color:var(--accent)">Scenario A: CatBoost, raw calibration, τ = 0.2883</h4>
       <table class="tbl" style="font-size:15px">
         <tr><th>Metric</th><th class="num">Valid</th><th class="num">OOT</th></tr>
         <tr><td>ROC AUC</td><td class="num">0.646804</td><td class="num">0.644239</td></tr>
@@ -625,7 +625,7 @@
       </table>
     </div>
     <div>
-      <h4 style="color:var(--accent)">Scenario B — CatBoost, raw calibration, τ = 0.2823</h4>
+      <h4 style="color:var(--accent)">Scenario B: CatBoost, raw calibration, τ = 0.2823</h4>
       <table class="tbl" style="font-size:15px">
         <tr><th>Metric</th><th class="num">Valid</th><th class="num">OOT</th></tr>
         <tr><td>ROC AUC</td><td class="num">0.668363</td><td class="num">0.668670</td></tr>
@@ -637,7 +637,7 @@
       </table>
     </div>
   </div>
-  <p class="src">Source: reports/scenario_{a,b}_metrics.json — full precision values</p>
+  <p class="src">Source: reports/scenario_{a,b}_metrics.json (full precision values)</p>
   <div class="deck-footer"><span class="dim2">Appendix</span></div>
   <div class="notes">Exact decimals for the technical audience.</div>
 </section>
