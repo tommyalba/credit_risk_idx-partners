@@ -131,6 +131,25 @@ Scenario A's `prepare.py` reproduces the canonical nb2 interim pickles
 byte-for-byte in values, so `autoresearch/`, the notebooks, and the
 pipeline all consume identical artifacts.
 
+### Serving and operations
+
+The same bundles back an HTTP service (`pipeline/serve.py`) and a
+gated retraining entry point (`pipeline/retrain.py`):
+
+```bash
+uvicorn pipeline.serve:app --host 0.0.0.0 --port 8000
+# POST /v1/score/application | /v1/score/lifecycle | /v1/score/monitor
+# GET  /health
+
+python -m pipeline.retrain --scenario a --promote   # gated refit
+```
+
+Deploy, monitoring, retrain/promotion, and rollback procedures live in
+`docs/ops_runbook.md`. A unified analyst dashboard
+(`dashboard/app.py`) combines the single-applicant scorecard with
+batch scoring, PSI drift, and segment views on the production bundles:
+`streamlit run dashboard/app.py`.
+
 ## Repository layout
 
 ```
@@ -208,9 +227,11 @@ For a fresh agent session:
   calibration fixes its PD level and it uniquely provides PD(t)
   curves. Retained as the right tool if term-structure or
   early-warning use cases appear.
-- **Dashboard v2.** Batch scoring, PSI panel, and segment views on top of
-  `pipeline/infer.py` outputs; the antislop skill family is installed for
-  UI work.
+- **Dashboard unification follow-ups.** `dashboard/app.py` now hosts
+  both tracks (single-applicant scorecard + batch/drift/segments).
+  Possible next step: score single applicants through the production
+  Scenario-A CatBoost bundle instead of the legacy nb3 scorecard, once
+  adverse-action point explanations are replicated for tree models.
 - **Threshold governance.** The gap between statistical optima
   (τ ≈ 0.25) and deployed τ (≈ 0.28–0.29) should be an explicit risk-policy
   decision, revisited quarterly with fresh OOT data.
