@@ -25,8 +25,8 @@ vintage drifts.
    - `POST /v1/score/application` — approve/reject PDs
    - `POST /v1/score/lifecycle` — both scenarios on one record set
    - `POST /v1/score/monitor` — PSI drift verdict for a batch (`?scenario=a|b`)
-5. Streamlit decision UI (analyst-facing, Scenario-A scorecard track):
-   `streamlit run dashboard/app.py`
+5. Analyst dashboard (unified: single-applicant scorecard + batch
+   scoring/drift/SHAP): `streamlit run dashboard/app.py`
 
 ## Monitor
 

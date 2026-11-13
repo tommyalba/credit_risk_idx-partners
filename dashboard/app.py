@@ -27,7 +27,11 @@ sys.path.insert(0, ROOT)
 from src.binning_woe import add_derived_features, transform_binning, transform_bin_labels
 from src.scorecard import ScorecardConfig, build_scorecard, score_dataframe, explain_score
 from src.thresholding import find_best_cost_threshold
-from pipeline.core import drift_report, score_records
+from pipeline.core import (  # noqa: E402
+    drift_report,
+    prepare_scoring_frame,
+    score_records,
+)
 from pipeline.infer import score_lifecycle
 from pipeline.scenario_a import score as score_a
 from pipeline.scenario_a import features as feat_a
@@ -36,7 +40,7 @@ from pipeline.scenario_b import features as feat_b
 
 st.set_page_config(page_title='Credit Risk Dashboard', layout='wide')
 
-APPROVE_COLOR, REJECT_COLOR, REVIEW_COLOR = '#1a7f37', '#cf222e', '#bf8700'
+APPROVE_COLOR, REJECT_COLOR = '#1a7f37', '#cf222e'
 
 RAW_FEATURES = [
     'annual_inc', 'collections_12_mths_ex_med', 'delinq_2yrs', 'dti',
@@ -45,7 +49,6 @@ RAW_FEATURES = [
     'revol_util', 'term', 'total_acc', 'verification_status',
 ]
 
-REVIEW_BAND = 0.02  # |PD - threshold| <= band -> manual review
 
 SCENARIOS = {
     'a': dict(label='Scenario A — new applications',
@@ -88,12 +91,17 @@ def load_categories():
             for c in ['home_ownership', 'purpose', 'verification_status', 'emp_length', 'term']}
 
 
+@st.cache_resource
+def load_prod_bundle():
+    return score_a.load_bundle()
+
+
 def render_applicant():
     st.subheader('Score a single application')
-    st.caption('Point-based scorecard (WoE logistic model) with an '
-               'adverse-action breakdown for declined applicants.')
+    st.caption('Production Scenario-A model (CatBoost) with SHAP '
+               'explanations — the top factors behind the decision, '
+               'usable as adverse-action reasons.')
 
-    model, binning, scorecard, threshold = load_scorecard_artifacts()
     cats = load_categories()
 
     with st.sidebar:
@@ -126,56 +134,93 @@ def render_applicant():
 
     row = {c: pd.NA for c in RAW_FEATURES}
     row.update(f)
-    X = pd.DataFrame([row])
-    X['issue_d'] = pd.to_datetime(X['issue_d'])
-    X['earliest_cr_line'] = pd.to_datetime(X['earliest_cr_line'])
+    df_app = pd.DataFrame([row])
+    df_app['issue_d'] = pd.to_datetime(df_app['issue_d'])
+    df_app['earliest_cr_line'] = pd.to_datetime(df_app['earliest_cr_line'])
 
-    Xw = transform_binning(X, binning, metric='woe')
-    feat_cols = scorecard.feature_names
-    p_bad = float(model.predict_proba(Xw[feat_cols])[:, 1][0])
-    score = int(score_dataframe(scorecard, X).iloc[0])
-    breakdown = explain_score(scorecard, X)
-
-    if abs(p_bad - threshold) <= REVIEW_BAND:
-        decision, color = 'MANUAL REVIEW', REVIEW_COLOR
-    elif p_bad >= threshold:
-        decision, color = 'DECLINE', REJECT_COLOR
-    else:
-        decision, color = 'APPROVE', APPROVE_COLOR
+    # ---- production Scenario-A bundle ----
+    bundle = load_prod_bundle()
+    try:
+        res = score_records(df_app, bundle, feat_a.add_scenario_a_features,
+                            feat_a.FORBIDDEN_FEATURES, score_a.REQUIRED_RAW)
+    except ValueError as e:
+        st.error(f'Application cannot be scored: {e}')
+        return
+    p_bad = float(res['pd_score'].iloc[0])
+    tau = float(bundle['threshold'])
+    decision = res['decision'].iloc[0]
+    color = REJECT_COLOR if decision == 'REJECT' else APPROVE_COLOR
 
     m1, m2, m3 = st.columns(3)
-    m1.metric('Credit score', score)
-    m2.metric('Probability of default', f'{p_bad:.2%}')
+    m1.metric('Default probability', f'{p_bad:.2%}')
+    m2.metric('PD threshold', f'{tau:.3f}')
     m3.metric('Recommended decision', decision)
 
     st.markdown(
         f"<div style='border-left:6px solid {color};padding:8px 16px;font-size:1.4rem;'>"
-        f"<b style='color:{color}'>{decision}</b> — PD threshold "
-        f"<b>{threshold:.3f}</b> (manual-review band ±{REVIEW_BAND:.0%})</div>",
+        f"<b style='color:{color}'>{decision}</b> — production CatBoost "
+        f"Scenario-A model, expected-cost threshold τ = <b>{tau:.3f}</b></div>",
         unsafe_allow_html=True)
 
     st.subheader('Why this decision')
-    st.dataframe(breakdown, width="stretch", hide_index=True)
-
-    worst = breakdown[breakdown['characteristic'] != 'Base Score'].nsmallest(3, 'point')
-    st.markdown('**Main risk drivers** (largest point deductions): '
-                + ', '.join(f"{r.characteristic} ({r.point} pts)" for r in worst.itertuples()))
+    st.caption('Top factors pushing this applicant toward or away from '
+               'default (SHAP values; positive = raises default risk).')
+    try:
+        X_model = prepare_scoring_frame(
+            df_app, bundle, feat_a.add_scenario_a_features)
+        from src.shap_interpretability import (
+            compute_shap_values,
+            explain_individual_prediction,
+        )
+        exp = compute_shap_values(bundle['model'], X_model)
+        ind = explain_individual_prediction(
+            exp, 0, feature_names=bundle['features'], top_n=8)
+        table = ind['table'].copy()
+        table['feature_value'] = table['feature_value'].astype(str)
+        st.dataframe(table, width="stretch", hide_index=True)
+        drivers = ind['table'].head(3)
+        st.markdown('**Top risk factors**: '
+                    + ', '.join(f"{r.feature} ({r.direction})"
+                                for r in drivers.itertuples()))
+    except Exception as e:
+        st.warning(f'Explanation unavailable: {e}')
 
     with st.expander('About this model'):
         manifest = json.load(open(os.path.join(ROOT, 'artifacts/manifest.json')))
         st.json({
-            'model': 'WoE logistic regression (scorecard track)',
-            'scorecard': 'PDO=20, target score 600 at 50:1 odds',
-            'validation': {'roc_auc': 0.669, 'ks': 0.252},
-            'oot_2013q1': {'roc_auc': 0.641, 'ks': 0.217},
-            'decision_threshold_pd': threshold,
+            'model': 'CatBoost (production Scenario-A bundle)',
+            'decision_threshold_pd': tau,
+            'oot_2013q1': {'roc_auc': 0.644},
             'manifest_git_commit': manifest.get('git_commit'),
             'limitations': [
                 'Application-time scope — post-origination fields excluded by design',
-                'Trained on funded loans only; reject-inference bias not corrected',
-                'For batch scoring and drift monitoring use the "Batch scoring" tab',
+                'Trained on funded loans only; reject-inference bias not corrected '
+                '(applicant-pool PD plausibly 1.4-1.9x funded-book PD)',
+                'SHAP directions are model explanations, not reason codes '
+                'guaranteed by regulation — validate wording with compliance',
             ],
         })
+
+    with st.expander('Legacy scorecard view (WoE logistic, nb3)'):
+        st.caption('Point-based scorecard kept for comparison and '
+                   'adverse-action point lookups.')
+        model, binning, scorecard, lr_threshold = load_scorecard_artifacts()
+
+        Xw = transform_binning(df_app, binning, metric='woe')
+        feat_cols = scorecard.feature_names
+        p_lr = float(model.predict_proba(Xw[feat_cols])[:, 1][0])
+        score = int(score_dataframe(scorecard, df_app).iloc[0])
+        breakdown = explain_score(scorecard, df_app)
+
+        m1, m2, m3 = st.columns(3)
+        m1.metric('Credit score', score)
+        m2.metric('PD (legacy model)', f'{p_lr:.2%}')
+        m3.metric('Legacy threshold', f'{lr_threshold:.3f}')
+
+        st.dataframe(breakdown, width="stretch", hide_index=True)
+        worst = breakdown[breakdown['characteristic'] != 'Base Score'].nsmallest(3, 'point')
+        st.markdown('**Main risk drivers** (largest point deductions): '
+                    + ', '.join(f"{r.characteristic} ({r.point} pts)" for r in worst.itertuples()))
 
 
 # ---------------------------------------------------------------- batch scoring
@@ -302,6 +347,31 @@ def render_batch():
             grp = seg.groupby(seg_col, observed=True)[score_col].agg(
                 ['count', 'mean', 'min', 'max']).reset_index()
             st.dataframe(grp, width="stretch", hide_index=True)
+
+    # ---- SHAP explanations ----
+    st.markdown('#### What drives the scores (SHAP)')
+    st.caption('Global feature importance computed on this batch '
+               '(sample of up to 300 records). Higher mean |SHAP| = bigger '
+               'influence on default probability.')
+    for s in psi_keys:
+        cfg = SCENARIOS[s]
+        try:
+            bundle = cfg['loader']()
+            X = prepare_scoring_frame(df, bundle, cfg['derive'])
+            if len(X) > 300:
+                X = X.sample(300, random_state=42)
+            from src.shap_interpretability import (
+                compute_shap_values,
+                get_global_importance_table,
+            )
+            exp = compute_shap_values(bundle['model'], X)
+            imp = get_global_importance_table(exp, bundle['features'])
+        except Exception as e:
+            st.warning(f'SHAP unavailable ({cfg["label"]}): {e}')
+            continue
+        st.markdown(f'**{cfg["label"]}**')
+        st.bar_chart(imp.head(10).set_index('feature')['mean_abs_shap'])
+        st.dataframe(imp.head(15), width='stretch', hide_index=True)
 
 
 # ---------------------------------------------------------------- shell

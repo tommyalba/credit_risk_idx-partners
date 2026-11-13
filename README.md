@@ -227,11 +227,14 @@ For a fresh agent session:
   calibration fixes its PD level and it uniquely provides PD(t)
   curves. Retained as the right tool if term-structure or
   early-warning use cases appear.
-- **Dashboard unification follow-ups.** `dashboard/app.py` now hosts
-  both tracks (single-applicant scorecard + batch/drift/segments).
-  Possible next step: score single applicants through the production
-  Scenario-A CatBoost bundle instead of the legacy nb3 scorecard, once
-  adverse-action point explanations are replicated for tree models.
+- **Dashboard follow-ups.** `dashboard/app.py` hosts both tracks: the
+  single-applicant tab scores through the production Scenario-A CatBoost
+  bundle with per-record SHAP drivers (legacy nb3 scorecard kept in an
+  expander for point-level adverse-action lookups); the batch tab covers
+  scenario/lifecycle scoring, PSI drift, segment views, and global SHAP.
+  Remaining gap: SHAP directions are model explanations, not compliance
+  reason codes — validate wording before using them in adverse-action
+  notices.
 - **Threshold governance.** The gap between statistical optima
   (τ ≈ 0.25) and deployed τ (≈ 0.28–0.29) should be an explicit risk-policy
   decision, revisited quarterly with fresh OOT data.

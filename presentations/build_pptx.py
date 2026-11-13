@@ -567,11 +567,10 @@ for t, b in asks:
 notes(s, "Each ask maps to a documented finding. Don't ask for blanket approval. Ask for three decisions.")
 
 # --------------------------------------------------------- 24 Next steps
-s = new_slide("Next steps", "Four scoped next steps: reject data, live shadow validation, dashboard, retraining automation")
+s = new_slide("Next steps", "Three scoped next steps: reject data, live shadow validation, retraining automation")
 steps = [("1 · Reject-level data collection", "Highest-value gap: turns bounded bias into measured bias. Reject-inference module already accepts augmented files."),
          ("2 · Shadow-mode pilot", "Score live applicants without acting; compare model PDs to realized outcomes, the missing live-portfolio validation."),
-         ("3 · Streamlit decision dashboard", "Scaffold exists; wire to pipeline/infer.py + SHAP for a business-facing UI."),
-         ("4 · Retraining automation", "Rolling-OOT harness is the promotion gate; PSI triggers; MLflow tracks each retrain.")]
+         ("3 · Retraining automation", "Gated retraining ships (pipeline/retrain.py); remaining work is scheduling it and wiring PSI alerts to trigger it early.")]
 cw = (SW - ML - MR - Inches(0.45) * 2) / 2
 for i, (t, b) in enumerate(steps):
     x = ML + (i % 2) * (cw + Inches(0.3))

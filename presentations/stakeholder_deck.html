@@ -8,37 +8,41 @@
 <link rel="stylesheet" id="theme-link" href="assets/themes/corporate-clean.css">
 <link rel="stylesheet" href="assets/animations.css">
 <style>
-  .action-title{font-size:34px;font-weight:700;color:var(--accent);line-height:1.25;margin:0 0 8px}
-  .src{font-size:13px;color:var(--text-3);margin-top:6px}
-  .kpi{font-size:54px;font-weight:800;color:var(--accent);line-height:1.05;letter-spacing:-.02em}
-  .kpi-label{font-size:15px;color:var(--text-2);margin-top:4px}
-  table.tbl{border-collapse:collapse;width:100%;font-size:17px}
-  table.tbl th{color:var(--text-3);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.06em;
+  .slide{padding:60px 88px}
+  .lede{font-size:24px}
+  h3,.h3{font-size:34px}
+  h4,.h4{font-size:23px}
+  .action-title{font-size:40px;font-weight:700;color:var(--accent);line-height:1.25;margin:0 0 10px}
+  .src{font-size:14px;color:var(--text-3);margin-top:6px}
+  .kpi{font-size:60px;font-weight:800;color:var(--accent);line-height:1.05;letter-spacing:-.02em}
+  .kpi-label{font-size:17px;color:var(--text-2);margin-top:4px}
+  table.tbl{border-collapse:collapse;width:100%;font-size:19px}
+  table.tbl th{color:var(--text-3);font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.06em;
     text-align:left;padding:8px 14px;border-bottom:2px solid var(--border-strong)}
   table.tbl td{padding:9px 14px;border-bottom:1px solid var(--border);color:var(--text-1)}
   table.tbl tr:last-child td{border-bottom:none}
   table.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
   table.tbl .win{color:var(--accent);font-weight:700}
-  .callout{border-left:4px solid var(--accent);background:var(--surface-2);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:17px;color:var(--text-1)}
+  .callout{border-left:4px solid var(--accent);background:var(--surface-2);padding:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:19px;color:var(--text-1)}
   .callout.warn{border-left-color:var(--warn)}
   .callout.bad{border-left-color:var(--bad)}
   .callout.good{border-left-color:var(--good)}
   .flow{display:flex;align-items:stretch;gap:0;margin-top:26px}
   .flow .node{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
     padding:18px 14px;text-align:center;box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:center;min-height:150px}
-  .flow .node h4{font-size:17px;margin:0 0 4px}
-  .flow .node p{font-size:13px;color:var(--text-3);margin:0;line-height:1.4}
+  .flow .node h4{font-size:19px;margin:0 0 4px}
+  .flow .node p{font-size:14px;color:var(--text-3);margin:0;line-height:1.4}
   .flow .node.hl{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 15%,transparent),var(--shadow)}
   .flow .arr{align-self:center;color:var(--text-3);font-size:26px;padding:0 10px;flex-shrink:0}
   .funnel{display:flex;flex-direction:column;gap:10px;margin-top:20px}
   .funnel .bar{height:56px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:space-between;
-    padding:0 22px;color:#fff;font-weight:700;font-size:19px}
-  .funnel .bar small{font-weight:400;font-size:14px;opacity:.85}
-  .fig{max-height:560px;max-width:100%;object-fit:contain}
+    padding:0 22px;color:#fff;font-weight:700;font-size:21px}
+  .funnel .bar small{font-weight:400;font-size:15px;opacity:.85}
+  .fig{max-height:540px;max-width:100%;object-fit:contain}
   .two-col{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
   ul.tight{margin:6px 0 0;padding-left:20px}
-  ul.tight li{margin:7px 0;font-size:17px;color:var(--text-1);line-height:1.45}
-  .tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;
+  ul.tight li{margin:7px 0;font-size:19px;color:var(--text-1);line-height:1.45}
+  .tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600;
     background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 25%,transparent)}
 </style>
 </head>
@@ -55,7 +59,7 @@
       Both are CatBoost models evaluated out-of-time, calibrated, thresholded on expected cost,
       and shipped as reproducible pipelines with drift monitoring.
     </p>
-    <p class="dim2" style="margin-top:22px;font-size:15px">credit_risk_modeling · reports/scenario_{a,b}_metrics.json · experiments/reports/</p>
+    <p class="dim2" style="margin-top:22px;font-size:17px">credit_risk_modeling · reports/scenario_{a,b}_metrics.json · experiments/reports/</p>
   </div>
   <div class="deck-footer"><span class="dim2">Internal use</span><span class="slide-number" data-current="1" data-total="28"></span></div>
   <div class="notes">Frame: this is a results briefing, not a tutorial. Two models, one shared engine, honest limits.</div>
@@ -68,17 +72,17 @@
   <div class="two-col mt-l">
     <div class="card">
       <h4>Decision 1: Approve or reject (before funding)</h4>
-      <p class="dim" style="font-size:16px">Every applicant needs a probability of default <em>before</em> money moves.
+      <p class="dim" style="font-size:18px">Every applicant needs a probability of default <em>before</em> money moves.
       A score that only ranks well is not enough: pricing, limits, and fair-lending review all need
       probabilities that mean what they say.</p>
     </div>
     <div class="card">
       <h4>Decision 2: Monitor the funded book (after origination)</h4>
-      <p class="dim" style="font-size:16px">Once funded, pricing and loan-structure fields exist.
+      <p class="dim" style="font-size:18px">Once funded, pricing and loan-structure fields exist.
       The book needs re-scoring as vintages age, with drift detection when the world changes.</p>
     </div>
   </div>
-  <div class="callout mt-l" style="font-size:18px">
+  <div class="callout mt-l" style="font-size:20px">
     <strong>What this project delivers:</strong> two models answering those two questions,
     evaluated on genuinely unseen future loans, with every claim traceable to a committed report.
   </div>
@@ -154,9 +158,9 @@
     <div class="node"><h4>monitor</h4><p>PSI drift report<br>Stable / Moderate / Significant</p></div>
   </div>
   <div class="grid g3 mt-l">
-    <div class="card"><h4>Reproducible</h4><p class="dim" style="font-size:15px">DVC-tracked data &amp; models, manifest.json env+hashes, MLflow runs, 48-test suite.</p></div>
-    <div class="card"><h4>Unified inference</h4><p class="dim" style="font-size:15px"><code>pipeline/infer.py</code> routes one record through both scenarios.</p></div>
-    <div class="card"><h4>Explainable</h4><p class="dim" style="font-size:15px"><code>pipeline/explain.py</code>: SHAP importance, cost curves, LR coefficients.</p></div>
+    <div class="card"><h4>Reproducible</h4><p class="dim" style="font-size:17px">DVC-tracked data &amp; models, manifest.json env+hashes, MLflow runs, 48-test suite.</p></div>
+    <div class="card"><h4>Unified inference</h4><p class="dim" style="font-size:17px"><code>pipeline/infer.py</code> routes one record through both scenarios.</p></div>
+    <div class="card"><h4>Explainable</h4><p class="dim" style="font-size:17px"><code>pipeline/explain.py</code>: SHAP importance, cost curves, LR coefficients.</p></div>
   </div>
   <p class="src">Source: docs/method.md · pipeline/core.py · pipeline/{scenario_a,scenario_b}/</p>
   <div class="deck-footer"><span class="dim2">What was built</span></div>
@@ -203,9 +207,9 @@
     <tr><td>LightGBM</td><td class="num">0.6456</td><td class="num">0.6436</td><td class="num">0.6658</td><td class="num">0.6687</td></tr>
   </table>
   <div class="grid g3 mt-l">
-    <div class="card"><h4>Calibration: raw wins</h4><p class="dim" style="font-size:15px">CatBoost probabilities needed no recalibration. Sigmoid and isotonic were tested on validation Brier; raw kept.</p></div>
-    <div class="card"><h4>Threshold: expected cost</h4><p class="dim" style="font-size:15px">τ minimizes expected loss (FN cost ≈ 8.25M vs FP ≈ 2.7M IDR), not accuracy.</p></div>
-    <div class="card"><h4>Ensembles: tested, rejected</h4><p class="dim" style="font-size:15px">Soft-vote and stacking evaluated; differences were within noise, so a single CatBoost shipped.</p></div>
+    <div class="card"><h4>Calibration: raw wins</h4><p class="dim" style="font-size:17px">CatBoost probabilities needed no recalibration. Sigmoid and isotonic were tested on validation Brier; raw kept.</p></div>
+    <div class="card"><h4>Threshold: expected cost</h4><p class="dim" style="font-size:17px">τ minimizes expected loss (FN cost ≈ 8.25M vs FP ≈ 2.7M IDR), not accuracy.</p></div>
+    <div class="card"><h4>Ensembles: tested, rejected</h4><p class="dim" style="font-size:17px">Soft-vote and stacking evaluated; differences were within noise, so a single CatBoost shipped.</p></div>
   </div>
   <p class="src">Source: reports/scenario_{a,b}_leaderboard.csv · reports/scenario_{a,b}_metrics.json</p>
   <div class="deck-footer"><span class="dim2">What was built</span></div>
@@ -229,11 +233,11 @@
     <div>
       <div class="card">
         <h4>Decision threshold τ = 0.2883</h4>
-        <p class="dim" style="font-size:15px">Expected-cost optimum on validation. Approved-book bad rate at τ: 13.5% vs 14.8% overall.</p>
+        <p class="dim" style="font-size:17px">Expected-cost optimum on validation. Approved-book bad rate at τ: 13.5% vs 14.8% overall.</p>
       </div>
       <div class="card mt-m">
         <h4>Reproduces the notebook baseline</h4>
-        <p class="dim" style="font-size:15px">Pipeline output matches nb4/autoresearch CatBoost to six decimals, so the .py pipeline is verified against the research code.</p>
+        <p class="dim" style="font-size:17px">Pipeline output matches nb4/autoresearch CatBoost to six decimals, so the .py pipeline is verified against the research code.</p>
       </div>
     </div>
   </div>
@@ -259,9 +263,9 @@
     <div>
       <div class="card">
         <h4>τ = 0.2823</h4>
-        <p class="dim" style="font-size:15px">Expected-cost threshold, same methodology as Scenario A.</p>
+        <p class="dim" style="font-size:17px">Expected-cost threshold, same methodology as Scenario A.</p>
       </div>
-      <div class="callout good mt-m" style="font-size:16px">
+      <div class="callout good mt-m" style="font-size:18px">
         OOT AUC <strong>higher</strong> than validation: the model generalizes rather than degrades on the future quarter.
       </div>
     </div>
@@ -298,7 +302,7 @@
     <div class="card center"><div class="kpi" style="font-size:40px">0.013 / 0.019</div><div class="kpi-label">ECE, valid / OOT (expected calibration error)</div></div>
     <div class="card center"><div class="kpi" style="font-size:40px">raw</div><div class="kpi-label">winning calibration: sigmoid &amp; isotonic lost on Brier</div></div>
   </div>
-  <div class="callout mt-l" style="font-size:17px">
+  <div class="callout mt-l" style="font-size:19px">
     <strong>Per-vintage recalibration hurts.</strong> 16 quarterly windows tested: refit calibrators on the adjusted tail
     <em>worsened</em> ECE and Brier. Raw ECE ≈ 0.02 is already good. Recalibrate only at scheduled retraining, not continuously.
   </div>
@@ -318,8 +322,8 @@
       <tr><td>B</td><td class="num">0.282</td><td class="num">[0.238, 0.302]</td><td class="num">&lt; 0.5% of cost</td></tr>
     </table>
     <div class="stack">
-      <div class="card"><h4>Cost curve is flat near τ</h4><p class="dim" style="font-size:15px">±0.05 deviation changes expected cost by ~2%; p90 regret ~1.2% of minimum.</p></div>
-      <div class="callout warn mt-m" style="font-size:16px">
+      <div class="card"><h4>Cost curve is flat near τ</h4><p class="dim" style="font-size:17px">±0.05 deviation changes expected cost by ~2%; p90 regret ~1.2% of minimum.</p></div>
+      <div class="callout warn mt-m" style="font-size:18px">
         <strong>Governance implication:</strong> τ needs <em>policy</em> control, not statistical control.
         The binding constraint is reject-inference bias (next slide), an order of magnitude larger effect.
       </div>
@@ -339,7 +343,7 @@
     <div class="card center"><div class="kpi" style="font-size:40px">0.12-0.18</div><div class="kpi-label">oracle τ under plausible assumptions vs deployed 0.288</div></div>
     <div class="card center"><div class="kpi" style="font-size:40px">none</div><div class="kpi-label">reject labels exist, so strict reject inference is impossible</div></div>
   </div>
-  <div class="callout bad mt-l" style="font-size:17px">
+  <div class="callout bad mt-l" style="font-size:19px">
     <strong>What this means:</strong> absolute PDs are conditional on funding. A predicted 15% means "15% of similar
     <em>funded</em> loans default". The true applicant pool defaults more often. Direction and rough magnitude are
     quantified; exact calibration needs reject-level data.
@@ -360,7 +364,7 @@
     <tr><td>Calibration parity</td><td class="win">60-mo term over-predicts ~6pp OOT</td><td>Predicted PD too high vs observed</td><td>Segment review</td></tr>
     <tr><td>Income</td><td>None</td><td>No adverse impact detected</td><td>None</td></tr>
   </table>
-  <p class="dim" style="font-size:16px;margin-top:14px">
+  <p class="dim" style="font-size:18px;margin-top:14px">
     AIR tests whether the <em>decision</em> treats segments equally; calibration parity tests whether a predicted PD
     means the same thing inside every segment. 73 segment rows across 9 groupings, valid + OOT.
   </p>
@@ -448,12 +452,12 @@
   <p class="kicker">Engineering</p>
   <h2 class="action-title">DVC-tracked artifacts, a manifest of environment and hashes, MLflow runs, and a 48-test suite</h2>
   <div class="grid g4 mt-l">
-    <div class="card"><h4>DVC</h4><p class="dim" style="font-size:15px">Data, interim frames, and model bundles versioned; local remote pushed.</p></div>
-    <div class="card"><h4>manifest.json</h4><p class="dim" style="font-size:15px">Environment versions, split config, artifact hashes, so any bundle is auditable.</p></div>
-    <div class="card"><h4>MLflow</h4><p class="dim" style="font-size:15px">Experiment tracking with sqlite backend; runs comparable across retrains.</p></div>
-    <div class="card"><h4>48 tests</h4><p class="dim" style="font-size:15px">pytest green: pipelines, metrics, PSI, conformal, reject-inference, threshold math.</p></div>
+    <div class="card"><h4>DVC</h4><p class="dim" style="font-size:17px">Data, interim frames, and model bundles versioned; local remote pushed.</p></div>
+    <div class="card"><h4>manifest.json</h4><p class="dim" style="font-size:17px">Environment versions, split config, artifact hashes, so any bundle is auditable.</p></div>
+    <div class="card"><h4>MLflow</h4><p class="dim" style="font-size:17px">Experiment tracking with sqlite backend; runs comparable across retrains.</p></div>
+    <div class="card"><h4>48 tests</h4><p class="dim" style="font-size:17px">pytest green: pipelines, metrics, PSI, conformal, reject-inference, threshold math.</p></div>
   </div>
-  <div class="callout good mt-l" style="font-size:17px">
+  <div class="callout good mt-l" style="font-size:19px">
     Scenario A pipeline reproduces the research notebook's CatBoost to <strong>six decimals</strong>.
     Production code and research code are provably the same model.
   </div>
@@ -485,12 +489,12 @@
   <p class="kicker">Honesty</p>
   <h2 class="action-title">Five known limitations, each with a mitigation in place or scoped</h2>
   <div class="grid g2 mt-l">
-    <div class="card"><h4>Single OOT quarter (2013Q1)</h4><p class="dim" style="font-size:15px">Mitigated by rolling-origin evaluation across 16 quarters.</p></div>
-    <div class="card"><h4>Funded-loan selection bias</h4><p class="dim" style="font-size:15px">Bounded by sensitivity analysis; needs reject-level data to resolve.</p></div>
-    <div class="card"><h4>Modest application-time AUC (~0.64)</h4><p class="dim" style="font-size:15px">Ceiling of pre-funding features; Scenario B reaches 0.669 with pricing data.</p></div>
-    <div class="card"><h4>Vintage drift</h4><p class="dim" style="font-size:15px">Gradual, monitored by PSI, handled by retraining cadence.</p></div>
-    <div class="card"><h4>Synthetic-data tests</h4><p class="dim" style="font-size:15px">Unit tests use fixtures; no live-portfolio shadow validation yet.</p></div>
-    <div class="card"><h4>Segment exceptions</h4><p class="dim" style="font-size:15px">small_business under-prediction and 60-mo over-prediction flagged for review.</p></div>
+    <div class="card"><h4>Single OOT quarter (2013Q1)</h4><p class="dim" style="font-size:17px">Mitigated by rolling-origin evaluation across 16 quarters.</p></div>
+    <div class="card"><h4>Funded-loan selection bias</h4><p class="dim" style="font-size:17px">Bounded by sensitivity analysis; needs reject-level data to resolve.</p></div>
+    <div class="card"><h4>Modest application-time AUC (~0.64)</h4><p class="dim" style="font-size:17px">Ceiling of pre-funding features; Scenario B reaches 0.669 with pricing data.</p></div>
+    <div class="card"><h4>Vintage drift</h4><p class="dim" style="font-size:17px">Gradual, monitored by PSI, handled by retraining cadence.</p></div>
+    <div class="card"><h4>Synthetic-data tests</h4><p class="dim" style="font-size:17px">Unit tests use fixtures; no live-portfolio shadow validation yet.</p></div>
+    <div class="card"><h4>Segment exceptions</h4><p class="dim" style="font-size:17px">small_business under-prediction and 60-mo over-prediction flagged for review.</p></div>
   </div>
   <div class="deck-footer"><span class="dim2">Honesty</span></div>
   <div class="notes">Naming limits builds credibility. Each has a next step; see the next-steps slide.</div>
@@ -509,7 +513,7 @@
     <tr><td>Soft-vote / stacking ensembles</td><td class="num">Differences within noise</td><td>Single CatBoost</td></tr>
     <tr><td>Per-vintage recalibration</td><td class="num">Worsens ECE and Brier</td><td>Recal only at retrain</td></tr>
   </table>
-  <p class="dim" style="font-size:16px;margin-top:12px">Autoresearch loop: ~15s per trial, protocol and keep/discard rule committed in autoresearch/program.md.</p>
+  <p class="dim" style="font-size:18px;margin-top:12px">Autoresearch loop: ~15s per trial, protocol and keep/discard rule committed in autoresearch/program.md.</p>
   <p class="src">Source: experiments/reports/class_imbalance_sampling.md · feature_representation.md · recalibration_drift.md · autoresearch/results/trials.jsonl</p>
   <div class="deck-footer"><span class="dim2">Negative results</span></div>
   <div class="notes">Negative results are a feature: the champion survived real competition, documented in trials.jsonl.</div>
@@ -539,7 +543,7 @@
       </ul>
     </div>
   </div>
-  <div class="callout good mt-l" style="font-size:17px">
+  <div class="callout good mt-l" style="font-size:19px">
     Both bundles reproduce with <code>python -m pipeline.scenario_{a,b}.train</code>; unified scoring via <code>pipeline/infer.py</code>.
   </div>
   <div class="deck-footer"><span class="dim2">Recommendation</span></div>
@@ -552,13 +556,13 @@
   <h2 class="action-title">Stakeholders must decide: how to handle reject-data bias, τ governance, and retraining cadence</h2>
   <div class="stack mt-l" style="max-width:1100px">
     <div class="card"><h4>1 · Reject-level data</h4>
-      <p class="dim" style="font-size:16px">Accept funded-conditional PDs with documented bounds (1.4-1.9×, oracle τ 0.12-0.18),
+      <p class="dim" style="font-size:18px">Accept funded-conditional PDs with documented bounds (1.4-1.9×, oracle τ 0.12-0.18),
       or invest in collecting/scoring rejected applicants to close the gap.</p></div>
     <div class="card"><h4>2 · τ governance</h4>
-      <p class="dim" style="font-size:16px">Approve the expected-cost τ policy (C_FN ≈ 8.25M vs C_FP ≈ 2.7M IDR) and its
+      <p class="dim" style="font-size:18px">Approve the expected-cost τ policy (C_FN ≈ 8.25M vs C_FP ≈ 2.7M IDR) and its
       review cadence. Statistical uncertainty is small; policy risk is not.</p></div>
     <div class="card"><h4>3 · Retraining cadence</h4>
-      <p class="dim" style="font-size:16px">Approve scheduled retraining (~semi-annual, PSI-triggered early).
+      <p class="dim" style="font-size:18px">Approve scheduled retraining (~semi-annual, PSI-triggered early).
       Rolling evaluation shows gradual drift, not abrupt breaks.</p></div>
   </div>
   <div class="deck-footer"><span class="dim2">Asks</span></div>
@@ -568,12 +572,11 @@
 <!-- 24. Next steps -->
 <section class="slide" data-title="The roadmap closes the known gaps">
   <p class="kicker">Next steps</p>
-  <h2 class="action-title">Four scoped next steps: reject data, live shadow validation, dashboard, retraining automation</h2>
+  <h2 class="action-title">Three scoped next steps: reject data, live shadow validation, retraining automation</h2>
   <div class="grid g2 mt-l">
-    <div class="card"><h4>1 · Reject-level data collection</h4><p class="dim" style="font-size:15px">Highest-value gap: turns bounded bias into measured bias. Reject-inference module already accepts augmented files.</p></div>
-    <div class="card"><h4>2 · Shadow-mode pilot</h4><p class="dim" style="font-size:15px">Score live applicants without acting; compare model PDs to realized outcomes, the missing live-portfolio validation.</p></div>
-    <div class="card"><h4>3 · Streamlit decision dashboard</h4><p class="dim" style="font-size:15px">Scaffold exists; wire to <code>pipeline/infer.py</code> + SHAP for a business-facing UI.</p></div>
-    <div class="card"><h4>4 · Retraining automation</h4><p class="dim" style="font-size:15px">Rolling-OOT harness is the promotion gate; PSI triggers; MLflow tracks each retrain.</p></div>
+    <div class="card"><h4>1 · Reject-level data collection</h4><p class="dim" style="font-size:17px">Highest-value gap: turns bounded bias into measured bias. Reject-inference module already accepts augmented files.</p></div>
+    <div class="card"><h4>2 · Shadow-mode pilot</h4><p class="dim" style="font-size:17px">Score live applicants without acting; compare model PDs to realized outcomes, the missing live-portfolio validation.</p></div>
+    <div class="card"><h4>3 · Retraining automation</h4><p class="dim" style="font-size:17px">Gated retraining ships (<code>pipeline/retrain.py</code>); remaining work is scheduling it and wiring PSI alerts to trigger it early.</p></div>
   </div>
   <p class="src">Source: README.md §Future directions · dashboard/app.py · autoresearch/program.md</p>
   <div class="deck-footer"><span class="dim2">Next steps</span></div>
@@ -586,11 +589,11 @@
     <p class="kicker">Conclusions</p>
     <h1 class="h1" style="font-size:44px">Two validated models, honest about their limits,<br>ready for pilot.</h1>
     <div class="grid g3 mt-l" style="max-width:1200px;margin:30px auto 0;text-align:left">
-      <div class="card"><h4>Scenario A</h4><p class="dim" style="font-size:15px">AUC 0.644 OOT · τ 0.288 · approve/reject</p></div>
-      <div class="card"><h4>Scenario B</h4><p class="dim" style="font-size:15px">AUC 0.669 OOT · τ 0.282 · book monitoring</p></div>
-      <div class="card"><h4>Trust layer</h4><p class="dim" style="font-size:15px">Calibration · SHAP · conformal · PSI · fairness · reproducibility</p></div>
+      <div class="card"><h4>Scenario A</h4><p class="dim" style="font-size:17px">AUC 0.644 OOT · τ 0.288 · approve/reject</p></div>
+      <div class="card"><h4>Scenario B</h4><p class="dim" style="font-size:17px">AUC 0.669 OOT · τ 0.282 · book monitoring</p></div>
+      <div class="card"><h4>Trust layer</h4><p class="dim" style="font-size:17px">Calibration · SHAP · conformal · PSI · fairness · reproducibility</p></div>
     </div>
-    <p class="dim2" style="margin-top:26px;font-size:15px">Every number traces to a committed report or test · questions welcome</p>
+    <p class="dim2" style="margin-top:26px;font-size:17px">Every number traces to a committed report or test · questions welcome</p>
   </div>
   <div class="deck-footer"><span class="dim2">Conclusions</span></div>
   <div class="notes">This slide stays on screen during Q&A. If asked for depth: appendix has full metrics + repro commands.</div>
@@ -614,7 +617,7 @@
   <div class="grid g2 mt-l">
     <div>
       <h4 style="color:var(--accent)">Scenario A: CatBoost, raw calibration, τ = 0.2883</h4>
-      <table class="tbl" style="font-size:15px">
+      <table class="tbl" style="font-size:17px">
         <tr><th>Metric</th><th class="num">Valid</th><th class="num">OOT</th></tr>
         <tr><td>ROC AUC</td><td class="num">0.646804</td><td class="num">0.644239</td></tr>
         <tr><td>PR AUC</td><td class="num">0.237474</td><td class="num">0.213800</td></tr>
@@ -626,7 +629,7 @@
     </div>
     <div>
       <h4 style="color:var(--accent)">Scenario B: CatBoost, raw calibration, τ = 0.2823</h4>
-      <table class="tbl" style="font-size:15px">
+      <table class="tbl" style="font-size:17px">
         <tr><th>Metric</th><th class="num">Valid</th><th class="num">OOT</th></tr>
         <tr><td>ROC AUC</td><td class="num">0.668363</td><td class="num">0.668670</td></tr>
         <tr><td>PR AUC</td><td class="num">0.258677</td><td class="num">0.236444</td></tr>
@@ -647,16 +650,16 @@
   <p class="kicker">Appendix · reproduce</p>
   <h2 class="action-title">Every artifact rebuilds from committed code and DVC-tracked data</h2>
   <div class="grid" style="grid-template-columns:1.2fr 1fr;gap:28px;margin-top:24px">
-    <div class="card" style="font-family:var(--font-mono);font-size:14px;line-height:1.9">
+    <div class="card" style="font-family:var(--font-mono);font-size:15px;line-height:1.9">
       <div><span class="dim2"># pipelines</span><br>python -m pipeline.scenario_a.train<br>python -m pipeline.scenario_b.train</div>
       <div class="mt-m"><span class="dim2"># scoring + drift</span><br>python -m pipeline.scenario_a.score batch.csv -o scores.csv --psi --intervals</div>
       <div class="mt-m"><span class="dim2"># unified inference</span><br>python -m pipeline.infer input.csv -o out.csv</div>
       <div class="mt-m"><span class="dim2"># experiments (~15s/trial)</span><br>python autoresearch/experiment.py configs/cat_raw.json</div>
     </div>
     <div class="stack">
-      <div class="card"><h4>Environment</h4><p class="dim" style="font-size:15px">conda env <code>credit-risk_VENV</code>, Python 3.13 · environment.yml · docs/reproduce.md</p></div>
-      <div class="card"><h4>Reports index</h4><p class="dim" style="font-size:15px">reports/scenario_*_{metrics.json,leaderboard.csv,model_card.md} · experiments/reports/*.md + *.csv</p></div>
-      <div class="card"><h4>Figures</h4><p class="dim" style="font-size:15px">reports/figures/ (SHAP, KS, cost curves) · presentations/figures/ (rolling OOT, hazard PD(t))</p></div>
+      <div class="card"><h4>Environment</h4><p class="dim" style="font-size:17px">conda env <code>credit-risk_VENV</code>, Python 3.13 · environment.yml · docs/reproduce.md</p></div>
+      <div class="card"><h4>Reports index</h4><p class="dim" style="font-size:17px">reports/scenario_*_{metrics.json,leaderboard.csv,model_card.md} · experiments/reports/*.md + *.csv</p></div>
+      <div class="card"><h4>Figures</h4><p class="dim" style="font-size:17px">reports/figures/ (SHAP, KS, cost curves) · presentations/figures/ (rolling OOT, hazard PD(t))</p></div>
     </div>
   </div>
   <div class="deck-footer"><span class="dim2">Appendix</span></div>
